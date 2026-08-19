@@ -5,7 +5,7 @@ import { applyPolyfills, defineCustomElements } from "@sankhyalabs/ezui/loader";
 import '@sankhyalabs/sankhya-docusaurus-styles/dist/index.css';
 import '@sankhyalabs/ez-design/dist/default/ez-themed.min.css';
 
-import Dados, { RESOURCE_ID } from './Dados';
+import OrdensProducao, { RESOURCE_ID } from './OrdensProducao';
 
 /*
  * Tira a tela da moldura de gadget e reabre em tela cheia. Roda no escopo do modulo, antes
@@ -21,13 +21,13 @@ import Dados, { RESOURCE_ID } from './Dados';
  */
 const substituindo = window.BI?.removerFrame ({
     paginaInicial: 'index.jsp',
-    instancia: 'TESTE REACT',
+    instancia: 'ORDEM DE PRODUCAO BI',
     resourceID: RESOURCE_ID
 });
 
 const montar = () =>
     createRoot (document.getElementById ('root') as HTMLElement)
-        .render (<React.StrictMode><Dados /></React.StrictMode>);
+        .render (<React.StrictMode><OrdensProducao /></React.StrictMode>);
 
 /*
  * ABRIR A TELA MONTA O REACT UMA VEZ SO.
