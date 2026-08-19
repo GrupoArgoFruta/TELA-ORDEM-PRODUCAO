@@ -1,0 +1,1051 @@
+<!--@JSP_DIRETIVAS@-->
+<!--
+  Esta e a tela. O scripts/zip.js a transforma em build/index.jsp, embutindo o bundle.
+
+  Por que .html e nao .jsp: o react-scripts EXIGE public/index.html (build.js:50 aborta sem
+  ele), entao manter os dois seria duplicacao.
+
+  ATENCAO: nao escreva scriptlets de JSP neste arquivo, nem dentro de comentarios. O
+  HtmlWebpackPlugin passa tudo pelo lodash/template, que avalia a abertura de scriptlet como
+  JavaScript e quebra o build — inclusive quando ela aparece so em prosa. Por isso as
+  diretivas e o acesso a sessao viram marcadores, preenchidos por scripts/zip.js.
+
+  A interpolacao da pasta base, essa sim, pode ficar literal no corpo da pagina: o loader do
+  HtmlWebpackPlugin passa um `interpolate` proprio, e o lodash so ativa o modo ES-template
+  quando esse regex e o default por referencia. Verificado. (Nao escrita aqui de proposito:
+  o container tambem a resolveria dentro deste comentario, vazando o caminho no HTML.)
+
+  Marcadores preenchidos por scripts/zip.js, um de cada, procure por "@" abaixo:
+    JSP_DIRETIVAS  as tres diretivas de pagina (tem que ser a primeira linha do arquivo)
+    JSP_USUARIO    a expressao que le o usuario logado da sessao
+    BI_STYLE       tema ez-design + main.css, com as fontes woff2 em base64
+    BI_SCRIPT      os 143 arquivos de JS concatenados
+
+  Nao cite os marcadores por extenso aqui: a substituicao exige exatamente uma ocorrencia de
+  cada, e uma citacao a mais faz o bundle ser embutido duas vezes.
+
+  No `npm start` os marcadores ficam como estao e os scripts /mge/ dao 404. A tela monta
+  assim mesmo: o removerFrame nao acha DashWindow fora de um gadget e retorna calado.
+-->
+
+<html lang="pt-BR">
+
+<head>
+
+    <!-- Cosmetico: a tela roda dentro de um iframe do shell, entao quem aparece na aba do -->
+    <!-- navegador e o titulo do Sankhya, nunca este. Vale pelo DevTools, que nomeia o     -->
+    <!-- frame por ele, e pela pagina aberta direto pela URL.                              -->
+    <title>Componente BI</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content= "width=device-width, initial-scale=1.0" />
+
+    <!-- **                                                                                                    -->
+    <!-- ** SEM ANGULARJS.                                                                                     -->
+    <!-- **                                                                                                    -->
+    <!-- ** A tela e 100% React + web components ez- e snk-. Nada do que ela precisa depende do AngularJS:     -->
+    <!-- ** o caminho vem da pasta interpolada, a sessao vem do JSP e os dados vem do BFF, pelo sankhyablocks. -->
+    <!-- ** Por isso saem daqui angular*.js, angular-material, snk.js, launcher.js, ui-grid, ui-bootstrap,     -->
+    <!-- ** jqwidgets, tinymce, ace, bpmn, fullcalendar e os CSS que os acompanham — sao ~30 requests que so   -->
+    <!-- ** existiriam para alimentar diretivas que esta tela nao usa, e o bootstrap.min.css/snk.min.css ainda -->
+    <!-- ** brigariam com os tokens do ez-design.                                                              -->
+    <!-- **                                                                                                    -->
+    <!-- ** ag-grid-enterprise.js tambem sai: o ez-grid traz a propria copia do AG Grid dentro do bundle.      -->
+    <!-- **                                                                                                    -->
+
+    <!-- Estilizacao base -->
+        <style>
+            /* **                                                                             */
+            /* ** AS DUAS MEDIDAS DA TELA                                                     */
+            /* **                                                                             */
+            /* ** Declaradas aqui porque varias regras abaixo dependem delas, e mais de uma    */
+            /* ** precisa da altura util (viewport menos a moldura) dentro de um calc — as     */
+            /* ** folhas da lib usam 100vh cru e nao sabem que existe moldura.                 */
+            /* **                                                                             */
+            /* ** Valores literais, e nao var(--space--large) / var(--space--medium): o tema   */
+            /* ** ez-design so e embutido no build, entao o editor marcaria o token como nao   */
+            /* ** resolvido aqui. Os valores batem com os do tema (24px e 12px).               */
+            /* **                                                                             */
+            :root {
+                --bi--moldura:       24px;   /* padding do #root: a moldura unica da tela */
+                --bi--respiro-grade: 12px;   /* gutter interno da grade e do rodape       */
+
+                --bi--altura-util:   calc(100vh - (var(--bi--moldura) * 2));
+            }
+
+            html, body {
+                height: 100%;
+                margin: 0;
+                overflow: hidden;
+            }
+
+            #root {
+                height: 100%;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+
+                padding: var(--bi--moldura);
+                box-sizing: border-box;
+            }
+
+            /* **                                                                             */
+            /* ** CADEIA DE ALTURA                                                            */
+            /* **                                                                             */
+            /* ** snk-application e snk-crud declaram :host { display:flex; height:100% },    */
+            /* ** mas o snk-data-unit NAO tem CSS proprio e o :host do snk-grid.css so define */
+            /* ** variaveis (--snk-grid-min-height, --snk-grid-padding) — nenhum display nem  */
+            /* ** altura. Os dois viram display:inline e quebram a cadeia no meio: o          */
+            /* ** height:100% do .snk-grid__container passa a resolver contra uma caixa de    */
+            /* ** altura automatica, a grade encolhe para o conteudo e o resto do painel fica */
+            /* ** vazio.                                                                      */
+            /* **                                                                             */
+            /* ** O snk-grid esta na lista porque a tela chegou a monta-lo direto sob o       */
+            /* ** snk-data-unit, sem snk-crud. Com o snk-crud de volta a regra e inofensiva — */
+            /* ** o stack-item que o envolve ja e flex-column de altura cheia — e continua    */
+            /* ** valendo se a composicao mudar de novo.                                      */
+            /* **                                                                             */
+            snk-application,
+            snk-data-unit,
+            snk-grid {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 auto;
+
+                /* Sem isto um filho que transborda impede o flex de encolher o container. */
+                min-height: 0;
+            }
+
+            /* **                                                                             */
+            /* ** BOTOES DE TOPO COLADOS NA GRADE                                             */
+            /* **                                                                             */
+            /* ** O .snk-grid__header e uma linha flex (justify-content: flex-end) sem altura  */
+            /* ** nem margem proprias — a altura dele e a do maior filho, e os botoes, de 32px */
+            /* ** e altura fixa, ficam encostados no topo dessa caixa.                         */
+            /* **                                                                             */
+            /* ** Na tela nativa esse header mede 49.33px porque la existem outros dois        */
+            /* ** filhos: a snk-filter-bar, cuja linha de chips tem 37px (o <hr> so estica ate */
+            /* ** ela, ja que .ez-divider-vertical e height: auto), e o proprio <hr>, que leva */
+            /* ** margin-bottom: var(--space--medium) — 37 + 12, com o resto em subpixel. Sao  */
+            /* ** esses 12px que afastam o card da grade, e os 17px que sobram abaixo dos      */
+            /* ** botoes vem da linha de chips ser mais alta que eles.                         */
+            /* **                                                                             */
+            /* ** O snk-grid so renderiza a filter-bar (e com ela o hr) quando a config de     */
+            /* ** filtro nao vem vazia — snk-grid.js, _showSnkFilterBar. Sem barra, o header   */
+            /* ** encolhe para os 32px dos botoes e eles encostam na grade.                    */
+            /* **                                                                             */
+            /* ** Reservar a mesma altura reproduz a caixa nativa e nao soma nada quando a     */
+            /* ** barra voltar: com ela o header ja passa desse minimo por conta propria.      */
+            /* **                                                                             */
+            .snk-grid__header {
+                /* 37px da linha de chips + o respiro da grade na margem do divisor. */
+                min-height: calc(37px + var(--bi--respiro-grade));
+            }
+
+            /* **                                                                             */
+            /* ** MODO FORMULARIO: O SNK-GUIDES-VIEWER PRESSUPOE UM CONTAINER DE SCROLL       */
+            /* **                                                                             */
+            /* ** Tres decisoes da folha dele so fecham dentro de algo que rola:              */
+            /* **                                                                             */
+            /* **   .snk-guides-viewer__header          position: sticky; top: 0              */
+            /* **   .snk-guides-viewer__guide-navigator position: sticky; top: 76px           */
+            /* **   .snk-guides-viewer__container       height: 100%   (sem descontar o       */
+            /* **                                       cabecalho que vem acima dele)         */
+            /* **                                                                             */
+            /* ** Nesta tela nada rola — html, body e #root sao overflow:hidden, porque a      */
+            /* ** grade cuida da propria rolagem. Sem scrollport, medido na tela no modo       */
+            /* ** formulario:                                                                  */
+            /* **                                                                              */
+            /* **   cabecalho  top 24   bottom 92                                              */
+            /* **   container  top 76   bottom 1346    (viewport 1318)                         */
+            /* **                                                                              */
+            /* ** ou seja, o conteudo comeca 16px ACIMA do fim do cabecalho — passa por baixo  */
+            /* ** dele — e ainda transborda 52px alem da caixa util. Os dois sticky ficam      */
+            /* ** inertes, na posicao estatica.                                                */
+            /* **                                                                              */
+            /* ** Delimitar a altura do proprio snk-guides-viewer e dar overflow a ele resolve */
+            /* ** os tres de uma vez: vira o scrollport que a lib procura, o cabecalho gruda   */
+            /* ** no topo dele, o navegador gruda nos 76px, e o que exceder rola em vez de ser */
+            /* ** cortado. E o comportamento da tela nativa.                                   */
+            /* **                                                                              */
+            /* ** Escopo minimo de proposito: mexer no ez-view-stack quebraria o mecanismo de  */
+            /* ** troca de views do snk-crud, que alterna visibility/display entre stack-items.*/
+            /* **                                                                              */
+            snk-guides-viewer {
+                display: block;
+
+                max-height: var(--bi--altura-util);
+                overflow-y: auto;
+            }
+
+            /* **                                                                             */
+            /* ** MODO FORMULARIO: O PAINEL DE GUIAS SE MEDE PELA VIEWPORT, NAO PELA CAIXA    */
+            /* **                                                                             */
+            /* ** O snk-guides-viewer.css dimensiona o navegador de guias assim:              */
+            /* **                                                                             */
+            /* **   .snk-guides-viewer__guide-navigator {                                     */
+            /* **     position: sticky;                                                        */
+            /* **     height: calc(100vh - <header 68px> - <large 24px> - <small 8px>);        */
+            /* **   }                                                                          */
+            /* **                                                                             */
+            /* ** O 100vh e a viewport INTEIRA. Numa tela nativa isso fecha, porque o conteudo */
+            /* ** ocupa a janela toda. Aqui nao: tudo vive dentro do #root, que tem a moldura  */
+            /* ** em cima e embaixo. Sobra --bi--altura-util, e o painel se acha uma moldura   */
+            /* ** inteira maior do que a caixa — a lista de guias termina cortada, sem alcance */
+            /* ** para os ultimos itens.                                                      */
+            /* **                                                                             */
+            /* ** Refazer o calculo sobre --bi--altura-util preserva a intencao do original em */
+            /* ** vez de trocar por altura fixa, e acompanha sozinho se a moldura mudar.       */
+            /* **                                                                             */
+            /* ** O seletor precisa da tag junto das duas classes: o Stencil injeta a folha do */
+            /* ** componente no <head> DEPOIS deste bloco, entao empatar em especificidade     */
+            /* ** perde. Com ez-guide-navigator no meio ganhamos por um elemento.              */
+            /* **                                                                             */
+            .snk-guides-viewer__container > ez-guide-navigator.snk-guides-viewer__guide-navigator {
+                height: calc(var(--bi--altura-util)
+                             - var(--snk-guides-viewer__header--min-height, 68px)
+                             - var(--snk-guides-viewer--space-large, 24px)
+                             - var(--snk-guides-viewer--space-small, 8px));
+            }
+
+            /* **                                                                             */
+            /* ** RODAPE DE TOTAIS DA GRADE                                                   */
+            /* **                                                                             */
+            /* ** O snk-grid renderiza um <slot name="SnkGridFooter"> depois da ez-grid, e o  */
+            /* ** snk-crud o repassa (snk-crud.js:363) — e por ele que o src/Rodape.tsx entra. */
+            /* **                                                                             */
+            /* ** A lib NAO estiliza esse conteudo: na tela nativa de Movimentacao Financeira  */
+            /* ** as classes .footer-totals e .total-indicator__icon vem da propria labsApp    */
+            /* ** dela, nao do ezui nem do sankhyablocks.                                     */
+            /* **                                                                             */
+            /* ** O layout do rodape NAO esta aqui: linha, alinhamento e espacamento sao       */
+            /* ** utilitarias do tema (ez-row, ez-align--middle, ez-padding-*), aplicadas no   */
+            /* ** src/Rodape.tsx — as mesmas que os cartoes ja usavam. Sobra so o circulo do   */
+            /* ** icone, que nao tem equivalente no tema.                                     */
+            /* **                                                                             */
+            /* ** As cores saem de tokens que EXISTEM no ez-themed.css: --color--success (:53) */
+            /* ** e --color--success-200 (:54), --color--error (:55) e --color--error-200      */
+            /* ** (:56). O par -200 e o fundo tonalizado que o proprio design system usa nesse */
+            /* ** papel (ez-themed.css:1363, no ez-badge). Os fallbacks repetem os valores     */
+            /* ** reais desses tokens, nao aproximacoes.                                      */
+            /* **                                                                             */
+            .total-indicator__icon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 32px;
+                height: 32px;
+                flex: 0 0 auto;
+                border-radius: 50%;
+                background-color: var(--background--medium, rgba(127, 127, 127, .12));
+                color: var(--text--primary);
+            }
+
+            .total-indicator__icon--positivo {
+                background-color: var(--color--success-200, #EBFFFA);
+                color: var(--color--success, #00cb94);
+            }
+
+            .total-indicator__icon--negativo {
+                background-color: var(--color--error-200, #F7E0E5);
+                color: var(--color--error, #DA4453);
+            }
+
+            /* O ez-icon herda a cor por esta variavel, nao por `color`. */
+            .total-indicator__icon ez-icon {
+                --ez-icon--color: currentColor;
+            }
+
+            /* **                                                                             */
+            /* ** ez-margin-bottom--small: 12px NO LUGAR DOS 6px DO TEMA                      */
+            /* **                                                                             */
+            /* ** O tema define 6px (ez-themed.css:639-640, var --space--small). Aqui a folga  */
+            /* ** de 6px e apertada demais entre os cartoes do rodape.                        */
+            /* **                                                                             */
+            /* ** Global, e nao escopado, porque o raio de alcance foi conferido e e pequeno:  */
+            /* ** so dois componentes das libs usam essa utilitaria — o editor de filtro       */
+            /* ** personalizado e o snk-layout-form-config —, os dois em telas de configuracao */
+            /* ** onde 6px a mais de respiro nao muda nada. Se algum dia isso incomodar, o     */
+            /* ** conserto e prefixar com .footer-totals.                                     */
+            /* **                                                                             */
+            /* ** O !important e necessario: o marcador do tema fica DEPOIS deste bloco (o     */
+            /* ** <style> vai ate a linha ~457 e o BI_STYLE entra em seguida), e a utilitaria  */
+            /* ** do tema tem uma classe so — empatar em especificidade perde pela ordem.      */
+            /* ** Mesma razao das regras de padding logo abaixo, que resolvem o empate com     */
+            /* ** duas classes; aqui nao ha segunda classe para usar.                          */
+            /* **                                                                             */
+            .ez-margin-bottom--small {
+                margin-bottom: var(--bi--respiro-grade) !important;
+            }
+
+            /* **                                                                             */
+            /* ** BARRA DE FILTROS: SEM MARGEM SUPERIOR                                       */
+            /* **                                                                             */
+            /* ** Duas margens desalinham os itens da barra em relacao ao resto do cabecalho:  */
+            /* **                                                                             */
+            /* **   .snk-filter-bar__filter-item-container  margin: 2px 0   snk-filter-bar.css:106 */
+            /* **   .ez-margin-top--extra-small             no botao "+ Filtros"                   */
+            /* **                                          snk-filter-bar.js:540                   */
+            /* **                                                                             */
+            /* ** So a de cima sai; a de baixo do container fica, porque e ela que separa os   */
+            /* ** chips da grade.                                                             */
+            /* **                                                                             */
+            /* ** O escopo em snk-filter-bar nao e enfeite: .ez-margin-top--extra-small e uma  */
+            /* ** utilitaria generica do tema, usada tambem no snk-guides-viewer.js:548 — sem  */
+            /* ** o descendente, zerar aqui mexeria no modo formulario tambem.                 */
+            /* **                                                                             */
+            /* ** !important pelo mesmo motivo da regra do modal abaixo: as folhas escopadas   */
+            /* ** do Stencil entram no <head> depois deste bloco.                              */
+            /* **                                                                             */
+            snk-filter-bar .snk-filter-bar__filter-item-container,
+            snk-filter-bar .ez-margin-top--extra-small {
+                margin-top: 0 !important;
+            }
+
+            /* **                                                                             */
+            /* ** MODAL "+ FILTROS": LARGURA MINIMA MENOR QUE A DA LIB                        */
+            /* **                                                                             */
+            /* ** O snk-filter-modal.css:5-8 declara min-width: 344px. Nesta tela isso sobra e */
+            /* ** o modal fica desproporcional, entao baixamos para 295px.                    */
+            /* **                                                                             */
+            /* ** O !important e necessario, nao preguica: a regra da lib e escopada pelo      */
+            /* ** Stencil (.snk-filter-modal__container.sc-snk-filter-modal, duas classes) e a */
+            /* ** folha dela e injetada no <head> DEPOIS deste bloco. Uma regra de uma classe  */
+            /* ** so perde por especificidade, e empatar perde pela ordem. A alternativa seria */
+            /* ** repetir a classe de escopo no seletor, o que amarraria esta regra a um       */
+            /* ** detalhe interno do build do Stencil.                                        */
+            /* **                                                                             */
+            .snk-filter-modal__container {
+                min-width: 295px !important;
+                overflow: hidden;
+            }
+
+            /* **                                                                             */
+            /* ** EDITOR DE FILTRO PERSONALIZADO: ALTURA POR FLEX, NAO POR PORCENTAGEM        */
+            /* **                                                                             */
+            /* ** O overlay em si esta correto e foi medido na tela: position:fixed, top 0,   */
+            /* ** altura igual a viewport, padding de 24px, sem containing block interferindo */
+            /* ** (.filter-bar__personalized-filter, snk-filter-bar.css:40-54). O que estoura */
+            /* ** e o miolo — o snk-personalized-filter.css dimensiona por porcentagem do PAI */
+            /* ** INTEIRO:                                                                    */
+            /* **                                                                             */
+            /* **     .snk-personalized-filter { height: 100% }   (via variavel)              */
+            /* **     .ez-box__main            { height: 90%  }                               */
+            /* **                                                                             */
+            /* ** sem descontar o cabecalho (snk-simple-bar), que fica ACIMA da caixa dentro  */
+            /* ** do mesmo container. Cabecalho + 90% passa de 100%: a caixa do formulario    */
+            /* ** avanca por cima do padding de baixo e encosta na borda da tela, e o excesso */
+            /* ** ainda rola o conteudo, tirando o cabecalho do campo de visao.               */
+            /* **                                                                             */
+            /* ** Que essa folha nao e revisada da para ver duas linhas acima: `height` le a  */
+            /* ** variavel --width e `width` le a --height. Como as duas valem 100%, nunca    */
+            /* ** incomodou ninguem.                                                          */
+            /* **                                                                             */
+            /* ** A correcao e a mesma da cadeia de altura la em cima: porcentagem sai, flex  */
+            /* ** entra, com min-height:0 para o item poder encolher — e a caixa ganha o      */
+            /* ** proprio scroll, que e o comportamento certo quando o filtro tem muitas      */
+            /* ** linhas de expressao.                                                        */
+            /* **                                                                             */
+            /* ** Os seletores ficam presos ao .filter-bar__personalized-filter de proposito: */
+            /* ** .ez-box__main e classe generica do tema e nao pode ser afetada fora daqui.  */
+            /* **                                                                             */
+            snk-personalized-filter.filter-bar__personalized-filter > .snk-personalized-filter {
+                display: flex;
+                flex-direction: column;
+                min-height: 0;
+            }
+
+            snk-personalized-filter.filter-bar__personalized-filter .ez-box__main {
+                height: auto;
+                flex: 1 1 auto;
+                min-height: 0;
+                overflow: auto;
+            }
+
+            /* **                                                                             */
+            /* ** MOLDURA UNICA: SO O PADDING DO #root                                        */
+            /* **                                                                             */
+            /* ** O snk-crud escreve ez-padding--medium (12px) no stack-item da grade e o     */
+            /* ** snk-grid escreve ez-padding--large (24px) no .snk-grid__container — as duas */
+            /* ** direto no render() (snk-crud.js:363, snk-grid.js:592), sem prop para        */
+            /* ** desligar. Somadas ao #root davam tres molduras concentricas.                */
+            /* **                                                                             */
+            /* ** Os seletores tem duas classes de proposito: as utilitarias do tema tem uma  */
+            /* ** so, entao estes vencem por especificidade e nao dependem da ordem em que a  */
+            /* ** CSS do componente e injetada. O padding: 0 no container tambem cobre o      */
+            /* ** var(--snk-grid-padding) do proprio snk-grid.css.                            */
+            /* **                                                                             */
+            stack-item.ez-padding--medium,
+            .snk-grid__container.ez-padding--large {
+                padding: 0 !important;
+            }
+
+            snk-taskbar.ez-padding-top--extra-small {
+                padding-top: 0 !important;
+            }
+
+            /* **                                                                             */
+            /* ** RESPIRO INTERNO DA GRADE                                                    */
+            /* **                                                                             */
+            /* ** A moldura que sobrou fica DENTRO do card, como na tela nativa: la o          */
+            /* ** .ag-root-wrapper tem padding lateral e inferior de var(--space--medium).     */
+            /* ** O bloco do AG Grid embutido no nosso ez-themed.css (linha 3003) so declara   */
+            /* ** cursor/position/display/flex/overflow — a regra do padding e mais nova que   */
+            /* ** a versao instalada aqui, entao ela vem deste arquivo.                        */
+            /* **                                                                             */
+            .ag-root-wrapper {
+                /* Sem topo: quem separa do cabecalho e o proprio header da grade. */
+                padding: 0 var(--bi--respiro-grade) var(--bi--respiro-grade) !important;
+
+                /* O .ag-layout-normal e height: 100%, e o AG Grid nao aplica border-box aqui: */
+                /* sem isto o respiro de baixo seria somado e estouraria a caixa.              */
+                box-sizing: border-box;
+            }
+
+            /* **                                                                             */
+            /* ** OVERLAY DE ERRO NO CARREGAMENTO                                             */
+            /* **                                                                             */
+            /* ** Escondido por padrao (display: none inline, no elemento). O script que      */
+            /* ** repete o lote GraphQL (contexto do Sankhya, mais abaixo) troca esse display */
+            /* ** para 'flex' quando a repeticao tambem falha. Fica fora de #root de          */
+            /* ** proposito: se o React nunca chega a montar porque o lote falhou antes disso,*/
+            /* ** o overlay ainda aparece.                                                    */
+            /* **                                                                             */
+            #bi-erro-carregamento {
+                position: fixed;
+                inset: 0;
+                z-index: 999999;
+                align-items: center;
+                justify-content: center;
+                background: rgba(0, 0, 0, 0.45);
+            }
+
+            .bi-erro-carregamento__caixa {
+                max-width: 360px;
+                padding: 24px;
+                border-radius: 8px;
+                background: #ffffff;
+                box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
+                font-family: Arial, Helvetica, sans-serif;
+                text-align: center;
+            }
+
+            .bi-erro-carregamento__titulo {
+                margin: 0 0 8px;
+                font-size: 16px;
+                font-weight: bold;
+                color: #333333;
+            }
+
+            .bi-erro-carregamento__texto {
+                margin: 0 0 16px;
+                font-size: 13px;
+                line-height: 1.4;
+                color: #666666;
+            }
+
+            .bi-erro-carregamento__botao {
+                padding: 8px 20px;
+                border: none;
+                border-radius: 4px;
+                background: #1976d2;
+                color: #ffffff;
+                font-size: 14px;
+                cursor: pointer;
+            }
+
+            .bi-erro-carregamento__botao:hover {
+                background: #1560ac;
+            }
+        </style>
+
+        <!--@BI_STYLE@-->
+    <!-- -->
+
+
+    <!-- CONTEXTO DO SANKHYA -->
+
+        <!-- **                                                                                                -->
+        <!-- ** Sem AngularJS as variaveis de i18n (locale/i18nAll/i18nFramework), o workspace e as portas da  -->
+        <!-- ** impressora nao tem mais consumidor — quem as lia era SkI18nService/SkWorkspace/impressao.js.   -->
+        <!-- ** Sobrou o que o sf.js le para montar a sessao.                                                  -->
+        <!-- **                                                                                                -->
+        <script type="text/javascript">
+
+            /* Variaveis uteis da pagina */
+                APPLICATION_NAME= 'DynaformLauncher';
+                MODULE_ID       = 'DynaformLauncher';
+                PCSF            = "I08joRPTKIBHLGw=";
+                PROFILEID       = 'S4W8LB';
+                RAS             = "aXNTdXA=";
+            /* */
+
+            /* **                                                                                */
+            /* ** MODULO DO BFF — para onde vao TODAS as queries GraphQL                         */
+            /* **                                                                                */
+            /* ** O snk-application monta o caminho como /<MGE_MODULE_NAME>/graphql              */
+            /* ** (DataFetcher.js:48) e, quando a variavel nao existe, assume 'mgefin-bff'       */
+            /* ** — o BFF do Financeiro (snk-application.js:1026). Numa tela nativa quem define  */
+            /* ** isso e o shell; aqui nao ha shell, entao o valor precisa estar escrito.        */
+            /* **                                                                                */
+            /* ** Pedir a um BFF a entidade de outro modulo devolve erro do servidor, nao uma    */
+            /* ** resposta vazia: o lote inteiro de queries falha de uma vez com HTTP 500 e a    */
+            /* ** tela nao monta. Deixar no default e apostar que a entidade e do Financeiro.    */
+            /* **                                                                                */
+            /* ** Para descobrir o certo, abra a tela nativa equivalente e veja no console       */
+            /* **                                                                                */
+            /* **     window.MGE_MODULE_NAME                                                     */
+            /* **                                                                                */
+            /* ** ou o caminho da requisicao /<modulo>/graphql na aba Network.                   */
+            /* **                                                                                */
+            /* ** O mesmo valor tambem forma o caminho do appmessages.js                         */
+            /* ** (/<modulo>/labsApps/<APPLICATION_NAME>/build/messages), cujo 404 e cosmetico.  */
+            /* **                                                                                */
+                MGE_MODULE_NAME = 'mgefin-bff';
+            /* ** */
+
+        </script>
+
+        <!-- Modulo de importacao do JQuery (dependencia do sf.js) -->
+        <script src="/mge/js/util/jquery-1.9.1.min.js?v="></script>
+        <!-- Gerenciador do token de autenticacao — sem ele o /mge/service.sbr responde 401 -->
+        <script src="/mge/js/sf/sf.js?v="></script>
+
+        <!-- Contexto que o React consome — nao ha microservico, entao tudo vem daqui ou do /mge/service.sbr -->
+        <script type="text/javascript">
+
+            /* **                                                                                */
+            /* ** O nome do Componente BI NAO fica aqui. Quem o consome e o BI.removerFrame, e   */
+            /* ** ele e chamado de dentro do bundle, no src/index.tsx — que passa o nome direto. */
+            /* ** Um campo aqui seria uma segunda fonte da verdade que ninguem le: ja foi assim, */
+            /* ** e o resultado foi os dois valores divergirem em silencio.                      */
+            /* **                                                                                */
+            window.SANKHYA = {
+                baseFolder : '${BASE_FOLDER}',
+                origin     : window.location.origin,
+                usuario    : '@JSP_USUARIO@'
+            };
+
+            /* Mantido pelo mesmo motivo das telas originais: codigo legado le globalThis.url */
+            globalThis.url = '${BASE_FOLDER}';
+
+            /* **                                                                                 */
+            /* ** SESSAO PARA O BFF (obrigatorio)                                                 */
+            /* **                                                                                 */
+            /* ** O DataFetcher do sankhyablocks monta a URL do GraphQL assim:                    */
+            /* **   mgeSession = window['mgeSession'] || urlParams.get('mgeSession')              */
+            /* ** A URL do html5component.mge nao traz esse parametro, entao sem isto a chamada   */
+            /* ** sai como /mgefin-bff/graphql?mgeSession=undefined e o BFF responde 401          */
+            /* ** "Not authenticated".                                                            */
+            /* **                                                                                 */
+            /* ** O valor e o cookie JSESSIONID sem o sufixo de jvmRoute (o que vem apos o ponto) */
+            /* ** — mesma formula usada pelo jsnk do projeto de injecao de telas, lida direto do  */
+            /* ** document.cookie.                                                                */
+            /* **                                                                                 */
+                (function () {
+
+                    const achado = document.cookie.match (/(?:^|;\s*)JSESSIONID=([^;]*)/);
+
+                    if (!achado) {
+                        console.error ('[bi] cookie JSESSIONID ausente — o BFF vai responder 401.');
+                        return;
+                    }
+
+                    window.mgeSession = decodeURIComponent (achado [1]).replace (/\..*/, '');
+
+                }) ();
+            /* ** */
+
+            /* **                                                                                 */
+            /* ** ABERTURA DA SESSAO DENTRO DO MODULO DO BFF (obrigatorio)                        */
+            /* **                                                                                 */
+            /* ** Passar ?mgeSession=<sessao> no /graphql NAO basta. O mgefin-bff e um modulo      */
+            /* ** separado, com contexto de sessao proprio, e o mgeSession do MGE precisa ser      */
+            /* ** registrado LA DENTRO antes de qualquer query. Quem faz esse registro e o         */
+            /* ** servlet de entrada do modulo:                                                    */
+            /* **                                                                                  */
+            /* **     GET /<MGE_MODULE_NAME>/<APPLICATION_NAME>.xhtml5?mgeSession=...              */
+            /* **                                                                                  */
+            /* ** Sem passar por ele, a instrumentacao de query do BFF                             */
+            /* ** (QueryLogginInstrumentation -> JDBCSpyService.getMgeSession) nao encontra a      */
+            /* ** sessao e lanca IllegalStateException("Sessao MGE nao iniciada"), que sobe sem    */
+            /* ** tratamento ate o servlet e derruba o lote inteiro com um 500 de corpo vazio.     */
+            /* **                                                                                  */
+            /* ** Uma tela nativa nunca sofre disso porque o shell abre a tela justamente por      */
+            /* ** esse .xhtml5. A nossa entra pelo /mge/html5component.mge e, antes disto, so      */
+            /* ** falava com /<modulo>/graphql — nunca com a porta de entrada do modulo.           */
+            /* **                                                                                  */
+            /* ** Diagnostico medido em HAR (arquivos na raiz do projeto): a sessao que tinha      */
+            /* ** passado por um .xhtml5 do modulo respondia 200; uma sessao nova, que nunca       */
+            /* ** passou, respondia 500 indefinidamente, por mais que se recarregasse a tela.      */
+            /* ** Abrir a Movimentacao Financeira nativa "consertava" a tela porque era ela que    */
+            /* ** fazia esse GET. Nao era corrida de tempo: era passo faltando.                    */
+            /* **                                                                                  */
+            /* ** O resultado e uma Promise que o wrapper de fetch abaixo espera antes de soltar   */
+            /* ** qualquer /graphql — e so isso garante a ordem, ja que o lote parte de dentro do  */
+            /* ** bundle, quando o snk-application monta, e nao daqui.                             */
+            /* **                                                                                  */
+            /* ** Nunca rejeita e nunca prende a tela: falha de rede so gera aviso, e um limite de */
+            /* ** tempo destrava a espera. Se mesmo assim a sessao nao abrir, o lote sai como      */
+            /* ** saia antes e as repeticoes/overlay abaixo continuam valendo como rede de         */
+            /* ** seguranca.                                                                       */
+            /* **                                                                                  */
+                const sessaoNoModulo = (function () {
+
+                    const LIMITE_MS = 8000;
+
+                    if (!window.mgeSession) return Promise.resolve ();
+
+                    /* O resourceID so existe na URL do iframe em tela cheia que o removerFrame   */
+                    /* monta. Na primeira carga (dentro da moldura do gadget) ele nao vem — e     */
+                    /* tudo bem: aquela carga e descartada, e a abertura da sessao independe dele. */
+                    const recurso = new URLSearchParams (window.location.search).get ('resourceID');
+
+                    let url = '/' + MGE_MODULE_NAME + '/' + APPLICATION_NAME + '.xhtml5'
+                        + '?mgeSession=' + encodeURIComponent (window.mgeSession);
+
+                    if (recurso) url += '&resourceID=' + encodeURIComponent (recurso);
+
+                    /* fetch nativo: este bloco roda antes de o wrapper abaixo ser instalado. */
+                    const abertura = fetch (url, { credentials: 'include' })
+                        .then (function (resposta) {
+                            if (!resposta.ok) {
+                                console.warn (
+                                    '[bi] entrada do modulo respondeu ' + resposta.status
+                                    + ' — o lote GraphQL pode falhar com 500.'
+                                );
+                            }
+                        })
+                        .catch (function (erro) {
+                            console.warn ('[bi] nao foi possivel abrir a sessao no modulo:', erro);
+                        });
+
+                    const limite = new Promise (function (resolver) {
+                        setTimeout (resolver, LIMITE_MS);
+                    });
+
+                    return Promise.race ([abertura, limite]);
+
+                }) ();
+            /* ** */
+
+            /* **                                                                                 */
+            /* ** ATE 2 REPETICOES DO LOTE GRAPHQL EM ERRO 5xx, COM ESPERA CRESCENTE               */
+            /* **                                                                                 */
+            /* ** O snk-application abre a tela com um lote de ~8 queries num unico POST           */
+            /* ** (graphql-request/batchRequests). Se esse POST falha, falha inteiro: metadados,  */
+            /* ** permissoes e configuracoes de grade e formulario somem de uma vez e a tela nao  */
+            /* ** monta. Nao ha ponto unico de falha maior nesta pagina.                          */
+            /* **                                                                                 */
+            /* ** O 500 de corpo vazio que se via aqui vinha da sessao nao aberta no modulo,      */
+            /* ** tratada no bloco acima — nao de erro transitorio. Ele parecia intermitente por  */
+            /* ** um motivo enganoso: quem reenviava o mesmo payload do console ja tinha aberto   */
+            /* ** uma tela nativa do modulo no meio do caminho, entao a sessao ja estava aberta e */
+            /* ** a repeticao respondia 200. Numa sessao que nunca passou pelo .xhtml5, o 500 e   */
+            /* ** permanente e nenhuma quantidade de repeticao resolve.                           */
+            /* **                                                                                 */
+            /* ** Estas repeticoes ficam so como rede de seguranca para 5xx genuinamente          */
+            /* ** passageiro. Sao duas, curtas: insistir mais so atrasava o overlay quando a      */
+            /* ** falha era permanente.                                                           */
+            /* **                                                                                 */
+            /* ** Condicoes para repetir, todas necessarias:                                      */
+            /* **                                                                                 */
+            /* **   - URL de GraphQL. O service.sbr sai por XHR e nem passa por aqui;             */
+            /* **   - status >= 500. Erro de negocio do BFF vem como 200 + errors[], e 401/403    */
+            /* **     nao melhoram com insistencia;                                               */
+            /* **   - corpo em texto e SEM "mutation". O mesmo endpoint grava (saveData,          */
+            /* **     saveResource, filtros personalizados) e reenviar gravacao duplica registro. */
+            /* **                                                                                 */
+            /* ** Precisa estar AQUI, antes do bundle: o cross-fetch, que o graphql-request usa,  */
+            /* ** copia a referencia de window.fetch quando o modulo dele e avaliado              */
+            /* ** (browser-ponyfill.js, `var ctx = __global__.fetch ? ...`). Trocar o global mais */
+            /* ** tarde, de dentro do React, nao alcanca mais nada.                               */
+            /* **                                                                                 */
+            /* ** Se todas as repeticoes TAMBEM vierem >= 500, desistimos de tentar sozinhos e    */
+            /* ** mostramos o overlay de #bi-erro-carregamento (marcacao e CSS no <head>/<body>   */
+            /* ** deste mesmo arquivo) com um botao "Recarregar". Ele faz window.location.reload()*/
+            /* ** — que recarrega so este documento (o iframe em tela cheia que o removerFrame    */
+            /* ** monta), nunca a janela do shell do Sankhya, entao as outras abas/telas abertas   */
+            /* ** na mesma sessao do usuario nao sao afetadas.                                    */
+            /* **                                                                                 */
+                (function () {
+
+                    const fetchOriginal = window.fetch.bind (window);
+
+                    /* Cada valor e o tempo de espera ANTES daquela tentativa; o comprimento do   */
+                    /* array e o numero de repeticoes (2, aqui).                                   */
+                    const ESPERAS_MS = [500, 1500];
+
+                    const esperar = function (ms) {
+                        return new Promise (function (resolver) { setTimeout (resolver, ms); });
+                    };
+
+                    const mostrarErroCarregamento = function () {
+
+                        const overlay = document.getElementById ('bi-erro-carregamento');
+
+                        if (!overlay) return;
+
+                        overlay.style.display = 'flex';
+
+                    };
+
+                    /* Tenta de novo a partir do indice `tentativa` de ESPERAS_MS. Recursiva em    */
+                    /* vez de um loop com await porque cada passo precisa do resultado da Promise  */
+                    /* anterior antes de decidir se ha mais uma espera pela frente.                */
+                    const repetir = function (recurso, opcoes, tentativa) {
+
+                        return esperar (ESPERAS_MS [tentativa]).then (function () {
+                            return fetchOriginal (recurso, opcoes);
+                        }).then (function (resposta) {
+
+                            if (resposta.status < 500) return resposta;
+
+                            const proxima = tentativa + 1;
+
+                            if (proxima < ESPERAS_MS.length) {
+                                console.warn (
+                                    '[bi] repeticao ' + (tentativa + 1) + ' tambem respondeu '
+                                    + resposta.status + ' — tentando de novo em '
+                                    + ESPERAS_MS [proxima] + 'ms.'
+                                );
+                                return repetir (recurso, opcoes, proxima);
+                            }
+
+                            console.error (
+                                '[bi] todas as ' + ESPERAS_MS.length
+                                + ' repeticoes responderam >= 500 — desistindo.'
+                            );
+                            mostrarErroCarregamento ();
+                            return resposta;
+
+                        });
+
+                    };
+
+                    window.fetch = function (recurso, opcoes) {
+
+                        const url = typeof recurso === 'string'
+                            ? recurso : (recurso && recurso.url) || '';
+
+                        if (url.indexOf ('/graphql') === -1) return fetchOriginal (recurso, opcoes);
+
+                        /* Segura TODA query ate a sessao estar aberta no modulo. E aqui que a    */
+                        /* ordem se garante: o lote parte de dentro do bundle, quando o           */
+                        /* snk-application monta, entao nao ha como sequencia-lo la de fora.      */
+                        return sessaoNoModulo.then (function () {
+                            return fetchOriginal (recurso, opcoes);
+                        }).then (function (resposta) {
+
+                            const corpo = opcoes && opcoes.body;
+
+                            const repetivel = resposta.status >= 500
+                                && typeof corpo === 'string'
+                                && corpo.indexOf ('mutation') === -1;
+
+                            if (!repetivel) return resposta;
+
+                            console.warn (
+                                '[bi] GraphQL respondeu ' + resposta.status
+                                + ' — repetindo o lote em ' + ESPERAS_MS [0] + 'ms.'
+                            );
+
+                            return repetir (recurso, opcoes, 0);
+
+                        }).catch (function (erro) {
+
+                            /* Falha de rede (sem nem chegar a ter status HTTP) tambem esgota a  */
+                            /* tentativa: nao ha o que repetir sem uma resposta para inspecionar. */
+                            mostrarErroCarregamento ();
+                            throw erro;
+
+                        });
+
+                    };
+
+                }) ();
+            /* ** */
+
+            /* **                                                                                */
+            /* ** RESOURCEID — NAO E AQUI                                                        */
+            /* **                                                                                */
+            /* ** Sao dois resourceID diferentes, e confundi-los custa tempo:                    */
+            /* **                                                                                */
+            /* ** 1. window['resourceID'] — lido pelo DataFetcher (DataFetcher.js:262) so para   */
+            /* **    montar a query string do service.sbr. NAO afeta permissao nenhuma. Fica     */
+            /* **    indefinido aqui de proposito; o servico funciona sem ele.                   */
+            /* **                                                                                */
+            /* ** 2. O resourceID das PERMISSOES e das configuracoes de grade/formulario, que o  */
+            /* **    snk-application resolve por urlParams e window.workspace. Sem workspace ele */
+            /* **    cai em "unknown.resource.id" e a tela abre somente leitura, com o alerta    */
+            /* **    "Sem permissao". Esse vai como prop do SnkDataUnit e, para alcancar tambem  */
+            /* **    o snk-application, como &resourceID= na URL do iframe montado pelo          */
+            /* **    removerFrame logo abaixo — veja a constante RESOURCE_ID no src/Dados.tsx.   */
+            /* **                                                                                */
+
+        </script>
+    <!-- -->
+
+
+    <!-- REMOCAO DA MOLDURA DE GADGET -->
+
+        <!-- **                                                                                                -->
+        <!-- ** Este bloco e um recorte do removerFrame do SankhyaJX                                           -->
+        <!-- ** (github.com/wansleynery/SankhyaJX), reescrito aqui para a pagina nao depender de nada externo.  -->
+        <!-- ** Antes ele vinha de um <script src> apontando para um CDN, e isso tinha dois defeitos: a tela    -->
+        <!-- ** parava de funcionar em base sem saida para a internet, e a tag usada era movel, entao uma       -->
+        <!-- ** publicacao nova da lib chegava sozinha em telas ja implantadas.                                 -->
+        <!-- **                                                                                                -->
+        <!-- ** So o removerFrame foi trazido. O JX.post e o JX.consultar ficaram de fora porque nada nesta     -->
+        <!-- ** tela os usa: os dados vem do BFF, pelo proprio sankhyablocks.                                   -->
+        <!-- **                                                                                                -->
+        <!-- ** Nada de template literal aqui dentro. O cifrao-chave e Expression Language para o container     -->
+        <!-- ** JSP, que o avalia dentro do <script> e o troca por string vazia. O zip.js escapa os do bundle,  -->
+        <!-- ** mas os desta pagina ficam literais de proposito (e assim que o BASE_FOLDER e resolvido).        -->
+        <!-- **                                                                                                -->
+        <script type="text/javascript">
+
+            window.BI = window.BI || {};
+
+            /* **                                                                                 */
+            /* ** O nuGdg que ja esta na URL desta pagina, se houver. Quando o shell monta o      */
+            /* ** gadget ele passa esse parametro, e ai o valor e exato por construcao: nao       */
+            /* ** depende de titulo, de seletor de DOM nem de permissao em servico nenhum.        */
+            /* ** E a fonte preferida; as outras duas existem para quando ele nao vier.           */
+            /* **                                                                                 */
+            function nuGdgDaUrl () {
+
+                try {
+
+                    const parametros = new URLSearchParams (window.location.search);
+
+                    let encontrado = null;
+
+                    /* Comparacao sem caixa: o nome do parametro ja apareceu grafado de formas    */
+                    /* diferentes entre versoes do Sankhya.                                       */
+                    parametros.forEach (function (valor, chave) {
+                        if (chave.toLowerCase () === 'nugdg' && valor && valor !== '0') {
+                            encontrado = valor;
+                        }
+                    });
+
+                    return encontrado;
+
+                } catch (erro) { return null; }
+
+            }
+
+            /* **                                                                                 */
+            /* ** Descobre o nuGdg do gadget pelo titulo cadastrado, como o original fazia com o  */
+            /* ** JX.consultar. Exige permissao no DbExplorerSP.executeQuery.                     */
+            /* **                                                                                 */
+            /* ** O apostrofo do titulo e duplicado antes de entrar no SQL. O original concatena  */
+            /* ** direto, e um componente chamado O'Brien quebraria a consulta.                   */
+            /* **                                                                                 */
+            function obterNuGdg (instancia) {
+
+                const daUrl = nuGdgDaUrl ();
+
+                if (daUrl) return Promise.resolve (daUrl);
+
+                if (!instancia) {
+                    console.warn ('[bi] sem nuGdg na URL e sem nome de instancia — a moldura fica.');
+                    return Promise.resolve (0);
+                }
+
+                const url = window.location.origin
+                    + '/mge/service.sbr?serviceName=DbExplorerSP.executeQuery&outputType=json';
+
+                const sql = "SELECT NUGDG FROM TSIGDG WHERE TITULO = '"
+                    + String (instancia).replace (/'/g, "''") + "'";
+
+                return window.fetch (url, {
+                    method      : 'POST',
+                    redirect    : 'follow',
+                    credentials : 'include',
+                    headers     : { 'Content-Type': 'application/json; charset=UTF-8' },
+                    body        : JSON.stringify ({
+                        serviceName : 'DbExplorerSP.executeQuery',
+                        requestBody : { sql: sql }
+                    })
+                })
+                .then (function (resposta) { return resposta.json (); })
+                .then (function (json) {
+
+                    /* O servico responde ora com responseBody na raiz, ora dentro de data. */
+                    const corpo  = (json && json.responseBody)
+                        || (json && json.data && json.data.responseBody);
+                    const linhas = corpo && corpo.rows;
+
+                    const achado = linhas && linhas.length && linhas [0] [0];
+
+                    if (!achado) {
+                        console.warn (
+                            '[bi] nenhum gadget com TITULO = "' + instancia + '" em TSIGDG. '
+                            + 'Confira o nome em src/index.tsx (case sensitive) — a moldura fica.'
+                        );
+                    }
+
+                    return achado || 0;
+
+                })
+                .catch (function (erro) {
+                    console.warn ('[bi] falha ao consultar o nuGdg — a moldura fica.', erro);
+                    return 0;
+                });
+
+            }
+
+            /* **                                                                                 */
+            /* ** Troca o conteudo do gadget por um iframe da propria tela, em tela cheia.        */
+            /* **                                                                                 */
+            /* ** A guarda do DashWindow e o que impede o laco infinito: a pagina recarregada     */
+            /* ** dentro do iframe novo nao tem essa classe no pai, entao a segunda execucao para */
+            /* ** aqui. O original so checa isso depois da consulta; checar antes evita disparar  */
+            /* ** um SELECT toda vez que a tela roda fora de um gadget (o `npm start`, p.ex.).    */
+            /* **                                                                                 */
+            /* ** Os 500ms sao do original e seguram a troca ate o shell terminar de montar o     */
+            /* ** gadget. Ficaram como estao.                                                     */
+            /* **                                                                                 */
+            /* ** DEVOLVE UMA PROMISE<BOOLEAN>: true quando este documento acabou de ser          */
+            /* ** substituido, false quando a moldura ficou (fora de gadget, sem nuGdg, pai       */
+            /* ** inacessivel). O src/index.tsx usa isso para NAO montar o React numa pagina que  */
+            /* ** ja esta condenada — sem isso a tela sobe duas vezes por abertura, e as duas     */
+            /* ** cargas disputam o mesmo lote de queries no BFF com 500ms de diferenca.          */
+            /* **                                                                                 */
+            /* ** Todos os caminhos precisam resolver: uma promise pendente aqui deixa a tela em  */
+            /* ** branco la.                                                                      */
+            /* **                                                                                 */
+            window.BI.removerFrame = function (configuracoes) {
+
+                const opcoes        = configuracoes || {};
+                const paginaInicial = opcoes.paginaInicial || 'index.jsp';
+                const resourceID    = opcoes.resourceID || '';
+
+                let instancia = opcoes.instancia || '';
+                let pai;
+
+                /* Fora do Sankhya, ou em pai de outra origem, nao ha moldura para remover. */
+                try { pai = window.parent.document; }
+                catch (erro) { return Promise.resolve (false); }
+
+                if (!pai || !pai.getElementsByClassName ('DashWindow') [0]) {
+                    return Promise.resolve (false);
+                }
+
+                /* Esconde o alerta do shell e trava a rolagem nos dois niveis acima. */
+                [window.parent, window.parent.parent].forEach (function (janela) {
+                    try {
+
+                        const documento = janela.document;
+                        const alerta    = documento.querySelector ('div.gwt-PopupPanel.alert-box.box-shadow');
+
+                        if (alerta)          alerta.style.display   = 'none';
+                        if (documento.body)  documento.body.style.overflow = 'hidden';
+
+                    } catch (erro) { /* nivel inacessivel: ignora */ }
+                });
+
+                /* **                                                                             */
+                /* ** O titulo no cabecalho do gadget vence o nome passado, como no original: ele */
+                /* ** e o nome do card que esta REALMENTE em tela, enquanto o valor do            */
+                /* ** src/index.tsx e uma constante compilada, que pode estar desatualizada ou    */
+                /* ** ainda no texto de exemplo. O seletor depende de uma classe gerada pelo GWT  */
+                /* ** (GI-BUHVBPVC), que muda entre versoes do Sankhya — por isso o nome passado  */
+                /* ** continua valendo como plano B.                                              */
+                /* **                                                                             */
+                try {
+
+                    const cabecalho = pai.querySelector (
+                        'div.GI-BUHVBPVC > div > div > div > div > div > table > tbody > tr > td > div'
+                    );
+
+                    if (cabecalho && cabecalho.textContent.trim ()) {
+                        instancia = cabecalho.textContent.trim ();
+                    }
+
+                } catch (erro) { /* seletor nao casou: fica o nome passado */ }
+
+                return obterNuGdg (instancia).then (function (nuGdg) {
+                    return new Promise (function (resolver) { setTimeout (function () {
+
+                        const alvo = pai.getElementsByClassName ('dyna-gadget') [0];
+
+                        if (!alvo) { resolver (false); return; }
+
+                        /* **                                                                     */
+                        /* ** Sem nuGdg nao ha troca. Recarregar com nuGdg=0 leva a uma tela que  */
+                        /* ** o ERP nao consegue resolver — pior que ficar na moldura pequena,    */
+                        /* ** que ao menos funciona. Os avisos acima dizem o que faltou.          */
+                        /* **                                                                     */
+                        if (!nuGdg || nuGdg === '0') { resolver (false); return; }
+
+                        /* **                                                                     */
+                        /* ** O caminho e relativo a pasta customizada — o container resolve o    */
+                        /* ** resto.                                                              */
+                        /* **                                                                     */
+                        /* ** O resourceID entra aqui porque esta e a UNICA URL desta tela que    */
+                        /* ** escrevemos: a primeira, montada pelo shell, nao aceita parametro    */
+                        /* ** nosso. O snk-application le urlParams.get('resourceID') antes de    */
+                        /* ** cair em 'unknown.resource.id', entao a pagina recarregada dentro    */
+                        /* ** deste iframe resolve grade, formulario, resumo e permissoes no      */
+                        /* ** mesmo recurso — e nao mais metade em cada.                          */
+                        /* **                                                                     */
+                        /* ** O valor vem do bundle (src/index.tsx repassa a constante do         */
+                        /* ** src/Dados.tsx). Sem ele a URL sai como antes.                       */
+                        /* **                                                                     */
+                        const destino = '/mge/html5component.mge?entryPoint='
+                            + paginaInicial + '&nuGdg=' + nuGdg
+                            + (resourceID ? '&resourceID=' + encodeURIComponent (resourceID) : '');
+
+                        /* **                                                                     */
+                        /* ** Resolve ANTES de trocar o innerHTML: a atribuicao abaixo destroi    */
+                        /* ** este documento, e o que vier depois dela pode nunca rodar.           */
+                        /* **                                                                     */
+                        resolver (true);
+
+                        alvo.innerHTML = '<iframe src="' + destino + '" class="gwt-Frame" '
+                            + 'style="width: 100%; height: 100%;"></iframe>';
+
+                    }, 500); });
+                });
+
+            };
+
+        </script>
+    <!-- -->
+
+</head>
+
+<body>
+
+    <div id="root"></div>
+
+    <!-- **                                                                                                -->
+    <!-- ** OVERLAY DE ERRO NO CARREGAMENTO                                                                -->
+    <!-- **                                                                                                -->
+    <!-- ** display:none inline vence a regra de CSS ate o script de contexto (acima, no <head>) trocar    -->
+    <!-- ** para 'flex' — so acontece quando o lote GraphQL de abertura falha mesmo apos a repeticao unica.-->
+    <!-- ** O onclick e inline (em vez de addEventListener) porque o script que preencheria isso roda no  -->
+    <!-- ** <head>, antes deste elemento existir no DOM.                                                  -->
+    <!-- **                                                                                                -->
+    <div id="bi-erro-carregamento" style="display: none;">
+        <div class="bi-erro-carregamento__caixa">
+            <p class="bi-erro-carregamento__titulo">Não foi possível carregar os dados desta tela.</p>
+            <p class="bi-erro-carregamento__texto">
+                Isso costuma ser algo temporário no servidor. Clique abaixo para recarregar apenas este
+                componente — as outras abas abertas no Sankhya não serão fechadas.
+            </p>
+            <button type="button" class="bi-erro-carregamento__botao" onclick="window.location.reload()">
+                Recarregar
+            </button>
+        </div>
+    </div>
+
+    <!-- **                                                                                                -->
+    <!-- ** O bundle inteiro (142 chunks + main.js) entra aqui, no fim do <body>, para que #root ja exista -->
+    <!-- ** quando o createRoot(getElementById('root')) do React rodar.                                    -->
+    <!-- **                                                                                                -->
+    <!--@BI_SCRIPT@-->
+
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Dependências
+/node_modules
+# package-lock.json É versionado neste repo (builds reprodutíveis, npm ci) —
+# ver "Pegadinhas herdadas do projeto original" no README do template.
+
+# Saída do `npm run zip` (o bi.zip é gerado, não versionado)
+/build
+
+# Ferramentas e editores
+/.claude
+/.idea
+/.vscode
+*.iml
+
+# Ambiente local
+.env
+.env.local
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Sistema operacional
+Thumbs.db
+Desktop.ini
+.DS_Store
