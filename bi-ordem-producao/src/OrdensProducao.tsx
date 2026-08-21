@@ -1,5 +1,6 @@
 import React from 'react';
 import { SnkApplication, SnkDataUnit, SnkCrud } from "@sankhyalabs/sankhyablocks/react/components";
+import Cabecalho from './Cabecalho';
 
 /*
  * SPIKE — versao minima so pra validar se `entityName` resolve contra o BFF.
@@ -26,14 +27,17 @@ const entidade = "AD_ORDEMPRODUCAO";
 
 const OrdensProducao = () => {
     return (
-        <SnkApplication configName={entidade}>
-            <SnkDataUnit
-                entityName = {entidade}
-                resourceID = {RESOURCE_ID || undefined}
-            >
-                <SnkCrud configName={entidade} />
-            </SnkDataUnit>
-        </SnkApplication>
+        <>
+            <Cabecalho />
+            <SnkApplication configName={entidade}>
+                <SnkDataUnit
+                    entityName = {entidade}
+                    resourceID = {RESOURCE_ID || undefined}
+                >
+                    <SnkCrud configName={entidade} />
+                </SnkDataUnit>
+            </SnkApplication>
+        </>
     );
 };
 

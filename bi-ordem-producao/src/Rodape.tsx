@@ -27,6 +27,8 @@ import { EzIcon } from '@sankhyalabs/ezui/react/components';
  *
  * `tom` nomeia o SIGNIFICADO, nao o pigmento: as cores saem de --color--success / --color--error
  * do tema, e amarrar a API a "verde" quebraria no dia em que positivo deixasse de ser verde.
+ * 'pallets'/'caixas' seguem a mesma ideia aplicada a identidade em vez de polaridade — nomeiam
+ * O QUE o cartao representa (ver RodapeItens.tsx), nao a cor escolhida pra ele.
  *
  * `icone` e um nome de icone do ez-design — os mesmos que a BarraTarefas.tsx lista. A tela
  * nativa usa south-east (receita), north-west (despesa), balance (saldo), arrow_downward e
@@ -37,7 +39,7 @@ export interface TotalDoRodape {
     valor: number;
     formato?: 'inteiro' | 'moeda';
     icone?: string;
-    tom?: 'positivo' | 'negativo';
+    tom?: 'positivo' | 'negativo' | 'pallets' | 'caixas';
 }
 
 /*

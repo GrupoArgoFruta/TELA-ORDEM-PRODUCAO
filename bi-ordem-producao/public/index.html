@@ -66,10 +66,41 @@
             /* ** resolvido aqui. Os valores batem com os do tema (24px e 12px).               */
             /* **                                                                             */
             :root {
-                --bi--moldura:       24px;   /* padding do #root: a moldura unica da tela */
-                --bi--respiro-grade: 12px;   /* gutter interno da grade e do rodape       */
+                --bi--moldura:          24px;   /* padding do #root: a moldura unica da tela   */
+                --bi--respiro-grade:    12px;   /* gutter interno da grade e do rodape         */
+                --bi--altura-cabecalho: 48px;   /* altura fixa da barra .bi-cabecalho          */
 
-                --bi--altura-util:   calc(100vh - (var(--bi--moldura) * 2));
+                /* **                                                                         */
+                /* ** Soma o cabecalho e o respiro abaixo dele: --bi--altura-util e o espaco   */
+                /* ** que sobra para snk-application (e, dentro dele, para o snk-guides-viewer */
+                /* ** do modo formulario) DEPOIS da barra do logo. Sem descontar isso aqui o   */
+                /* ** guide-navigator (ver .snk-guides-viewer__container abaixo) mediria a     */
+                /* ** altura como se a barra nao existisse e sobraria/cortaria exatamente os   */
+                /* ** pixels dela — mesma classe de erro que a nota original ja documentava    */
+                /* ** para o 100vh cru da lib.                                                 */
+                /* **                                                                         */
+                --bi--altura-util:      calc(100vh - (var(--bi--moldura) * 2)
+                                             - var(--bi--altura-cabecalho) - var(--bi--respiro-grade));
+            }
+
+            /* **                                                                             */
+            /* ** BARRA DE CABECALHO (logo + titulo)                                          */
+            /* **                                                                             */
+            /* ** Altura fixa (--bi--altura-cabecalho) e nao cresce: flex do #root aplica o    */
+            /* ** padrao (flex: 0 1 auto), entao o snk-application (flex: 1 1 auto) e quem     */
+            /* ** ocupa o restante da coluna sozinho. O respiro abaixo dela usa a mesma medida */
+            /* ** ja usada entre grade e rodape, para nao introduzir uma terceira escala.      */
+            /* **                                                                             */
+            .bi-cabecalho {
+                flex: 0 0 auto;
+                height: var(--bi--altura-cabecalho);
+                margin-bottom: var(--bi--respiro-grade);
+                box-sizing: border-box;
+            }
+
+            .bi-cabecalho__logo {
+                height: 24px;
+                width: auto;
             }
 
             html, body {
@@ -228,6 +259,13 @@
             /* ** papel (ez-themed.css:1363, no ez-badge). Os fallbacks repetem os valores     */
             /* ** reais desses tokens, nao aproximacoes.                                      */
             /* **                                                                             */
+            /* ** --pallets/--caixas (RodapeItens.tsx) seguem o mesmo par bg-clara/icone-forte: */
+            /* ** --color--primary-300 (:44) tem par claro de verdade, igual --success-200. Ja */
+            /* ** --color--tertiary nao tem um -200 pastel (o (:51) e so um tom mais claro do   */
+            /* ** mesmo rosa saturado — pouco contraste contra o proprio icone), entao o fundo  */
+            /* ** sai de rgba(218,54,136,.12), o mesmo rosa em baixa opacidade, no espirito do  */
+            /* ** rgba(127,127,127,.12) que ja e o fallback neutro logo abaixo.                */
+            /* **                                                                             */
             .total-indicator__icon {
                 display: flex;
                 align-items: center;
@@ -248,6 +286,16 @@
             .total-indicator__icon--negativo {
                 background-color: var(--color--error-200, #F7E0E5);
                 color: var(--color--error, #DA4453);
+            }
+
+            .total-indicator__icon--pallets {
+                background-color: var(--color--primary-300, #e2f4ef);
+                color: var(--color--primary, #008561);
+            }
+
+            .total-indicator__icon--caixas {
+                background-color: rgba(218, 54, 136, .12);
+                color: var(--color--tertiary, #da3688);
             }
 
             /* O ez-icon herda a cor por esta variavel, nao por `color`. */

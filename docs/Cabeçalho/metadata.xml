@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<metadata>
+  <exportInfo>
+    <exportTime>21/08/2026 13:55:14</exportTime>
+    <systemVersion>4.35b613</systemVersion>
+    <systemCharSet>ISO-8859-1</systemCharSet>
+    <dbMetadata>
+      <dbUser>SANKHYA</dbUser>
+      <urlConnection><![CDATA[jdbc:oracle:thin:@192.168.5.5:1521/STREINA]]></urlConnection>
+      <jdbcDriver><![CDATA[Oracle JDBC driver 19.3.0.0.0]]></jdbcDriver>
+      <DBMS><![CDATA[Oracle - Oracle Database 19c Standard Edition 2 Release 19.0.0.0.0 - Production
+Version 19.9.0.0.0]]></DBMS>
+    </dbMetadata>
+  </exportInfo>
+  <instances>
+    <instance name="AD_AREAPARC" isUpdate="false">
+      <instanceDescription><![CDATA[Áreas Produtivas/Valvulas de Parceiros]]></instanceDescription>
+      <tableInfo name="AD_AREAPARC" sequenceType="A" sequenceField="CODAREA">
+        <category><![CDATA[Parceiro]]></category>
+        <tableDescription><![CDATA[Áreas Produtivas de Parceiros]]></tableDescription>
+        <primaryKey>
+          <CODPARC />
+          <CODAREA />
+        </primaryKey>
+      </tableInfo>
+      <fields>
+        <field name="VALVLOTE" systemField="N" dataType="S" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[N. interno p/comp Lote]]></description>
+          <properties>
+            <prop name="nullable"><![CDATA[S]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[N]]></prop>
+            <prop name="requerido"><![CDATA[S]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+        <field name="CODPROD" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S" size="10">
+          <description><![CDATA[Código MP]]></description>
+          <properties>
+            <prop name="nullable"><![CDATA[S]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[N]]></prop>
+            <prop name="requerido"><![CDATA[S]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+        <field name="DESCVALVULA" systemField="N" dataType="S" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Descricao Valvula]]></description>
+          <properties>
+            <prop name="nullable"><![CDATA[S]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[N]]></prop>
+            <prop name="requerido"><![CDATA[S]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+        <field name="DESCRICAO" systemField="N" dataType="S" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Descrição]]></description>
+          <properties>
+            <prop name="nullable"><![CDATA[S]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[N]]></prop>
+            <prop name="requerido"><![CDATA[S]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+        <field name="CODAREA" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="N">
+          <description><![CDATA[Codigo Interno]]></description>
+          <properties>
+            <prop name="nullable"><![CDATA[S]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[N]]></prop>
+            <prop name="requerido"><![CDATA[N]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+        <field name="CODPARC" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="N" size="10">
+          <description><![CDATA[Cód. Parceiro]]></description>
+        </field>
+        <field name="ATIVO" systemField="N" dataType="S" presentationType="O" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Ativo]]></description>
+          <options>
+            <option value="S"><![CDATA[Sim]]></option>
+            <option value="N" default="S"><![CDATA[Não]]></option>
+          </options>
+        </field>
+      </fields>
+      <relationShip>
+        <relation entityName="Parceiro" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="S" tableName="TGFPAR" />
+          <fields>
+            <field localName="CODPARC" targetName="CODPARC" />
+          </fields>
+        </relation>
+        <relation entityName="Produto" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="S" tableName="TGFPRO" />
+          <expression><![CDATA[@form-filter[this.USOPROD ='M']@ref-param[show-on-ui=true;auto-search=true]this.USOPROD ='M']]></expression>
+          <fields>
+            <field localName="CODPROD" targetName="CODPROD" />
+          </fields>
+        </relation>
+      </relationShip>
+      <references>
+        <reference entityName="Parceiro" tableName="TGFPAR" type="I" insert="N" update="N" remove="S">
+          <!--Esse elemento "reference" diz respeito a campos da entidade exportada que são mencionados em tabelas do sistema.-->
+          <fields>
+            <field name="CODPARC" systemField="S" localName="CODPARC" />
+          </fields>
+        </reference>
+        <reference entityName="ItemNota" tableName="TGFITE" type="I" insert="N" update="N" remove="N">
+          <!--Esse elemento "reference" diz respeito a campos da entidade exportada que são mencionados em tabelas do sistema.-->
+          <expression><![CDATA[@form-filter[this.ATIVO = 'S' AND this.codparc=form.AD_CODPARVALVULA
+and this.CODPARC IN (9988,10023,9980,1661,10042)]this.CODPARC IN (9988,10023,9980,1661,10042)]]></expression>
+          <fields>
+            <field name="AD_CODAREA" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S" localName="CODAREA">
+              <description><![CDATA[Codigo Valvula]]></description>
+            </field>
+            <field name="AD_CODPARVALVULA" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S" localName="CODPARC">
+              <description><![CDATA[Parceiro Valvulas]]></description>
+            </field>
+          </fields>
+        </reference>
+      </references>
+    </instance>
+    <instance name="AD_ORDEMPRODUCAOITEM" isUpdate="false">
+      <instanceDescription><![CDATA[Ordem de Produção Item]]></instanceDescription>
+      <tableInfo name="AD_ORDEMPRODUCAOITEM" sequenceType="A" sequenceField="CODITEM">
+        <category><![CDATA[Ordem de Produção]]></category>
+        <tableDescription><![CDATA[ORDEMPRODUCAOITEM]]></tableDescription>
+        <primaryKey>
+          <CODOP />
+          <CODITEM />
+        </primaryKey>
+      </tableInfo>
+      <fields>
+        <field name="CODOP" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="N">
+          <description><![CDATA[Cod.Item]]></description>
+        </field>
+        <field name="CODITEM" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="N">
+          <description><![CDATA[Sequencia]]></description>
+        </field>
+        <field name="QTDPALLETS" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Qtd.Pallets]]></description>
+        </field>
+        <field name="QTDCAIXAS" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Qtd.Caixa]]></description>
+        </field>
+        <field name="DTEMBALAGEM" systemField="N" dataType="H" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Data de embalagem]]></description>
+        </field>
+        <field name="CODPROD" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S" size="10">
+          <description><![CDATA[Produto]]></description>
+        </field>
+        <field name="VARIEDADE" systemField="N" dataType="S" presentationType="P" calculated="S" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Variedade]]></description>
+          <expression><![CDATA[#type.sql#
+SELECT g.AD_DESCRESUMO
+FROM TGFPRO t
+INNER JOIN TGFGRU g ON g.CODGRUPOPROD = t.CODGRUPOPROD
+WHERE t.CODPROD = AD_ORDEMPRODUCAOITEM.CODPROD]]></expression>
+          <properties>
+            <prop name="nullable"><![CDATA[S]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[S]]></prop>
+            <prop name="requerido"><![CDATA[N]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+        <field name="CODPRODAD" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S" size="10">
+          <description><![CDATA[Código Cinta/Etiq]]></description>
+        </field>
+        <field name="CALIBRE" systemField="N" dataType="S" presentationType="O" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Calibre]]></description>
+        </field>
+        <field name="PADRAO" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Padrão]]></description>
+        </field>
+        <field name="CODCUMBUCA" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S" size="10">
+          <description><![CDATA[Cumbuca]]></description>
+        </field>
+        <field name="ETIQUETA" systemField="N" dataType="S" presentationType="O" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Etiqueta]]></description>
+          <options>
+            <option value="S"><![CDATA[Sim]]></option>
+            <option value="N" default="S"><![CDATA[Não]]></option>
+          </options>
+        </field>
+        <field name="CODPARC" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S" size="10">
+          <description><![CDATA[Produtor]]></description>
+          <properties>
+            <prop name="apresentacao"><![CDATA[DESCVALVULA]]></prop>
+          </properties>
+        </field>
+        <field name="CODAREA" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S" size="10">
+          <description><![CDATA[Valvula]]></description>
+          <properties>
+            <prop name="apresentacao"><![CDATA[DESCVALVULA]]></prop>
+          </properties>
+        </field>
+      </fields>
+      <relationShip>
+        <relation entityName="Parceiro" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="S" tableName="TGFPAR" />
+          <fields>
+            <field localName="CODPARC" targetName="CODPARC" />
+          </fields>
+        </relation>
+        <relation entityName="Produto" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="S" tableName="TGFPRO" />
+          <fields>
+            <field localName="CODPROD" targetName="CODPROD" />
+          </fields>
+        </relation>
+        <relation entityName="Produto" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="S" tableName="TGFPRO" />
+          <expression><![CDATA[this.CODGRUPOPROD = '3001001' AND (this.DESCRPROD like '%CINTA%' OR this.DESCRPROD like '%ETIQ%')]]></expression>
+          <fields>
+            <field localName="CODPRODAD" targetName="CODPROD" />
+          </fields>
+        </relation>
+        <relation entityName="Produto" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="S" tableName="TGFPRO" />
+          <fields>
+            <field localName="CODCUMBUCA" targetName="CODPROD" />
+          </fields>
+        </relation>
+        <relation entityName="AD_CALIBREPRODUTO" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="N" tableName="AD_CALIBREPRODUTO" />
+          <expression><![CDATA[@ref-param[force-one-to-one=true]]]></expression>
+          <fields>
+            <field localName="CALIBRE" targetName="CALIBRE" />
+          </fields>
+        </relation>
+        <relation entityName="AD_AREAPARC" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="N" tableName="AD_AREAPARC" />
+          <expression><![CDATA[@ref-param[force-one-to-one=true]]]></expression>
+          <fields>
+            <field localName="CODAREA" targetName="CODAREA" />
+          </fields>
+        </relation>
+      </relationShip>
+    </instance>
+    <instance name="AD_ORDEMPRODUCAO" isUpdate="false">
+      <instanceDescription><![CDATA[Ordem de Produção]]></instanceDescription>
+      <tableInfo name="AD_ORDEMPRODUCAO" sequenceType="A" sequenceField="CODOP">
+        <category><![CDATA[Ordem de Produção]]></category>
+        <tableDescription><![CDATA[ORDEMPRODUCAO]]></tableDescription>
+        <primaryKey>
+          <CODOP />
+        </primaryKey>
+      </tableInfo>
+      <fields>
+        <field name="CODOP" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="N" size="10">
+          <description><![CDATA[Codigo]]></description>
+          <properties>
+            <prop name="nullable"><![CDATA[S]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[S]]></prop>
+            <prop name="requerido"><![CDATA[N]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+        <field name="NUMOP" systemField="N" dataType="S" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[número exibido]]></description>
+        </field>
+        <field name="CODPARC" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S" size="10">
+          <description><![CDATA[Cód. Parceiro]]></description>
+        </field>
+        <field name="NUNOTA" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="N" visibleOnSearch="S" allowNull="S" size="10">
+          <description><![CDATA[Nro. Único]]></description>
+        </field>
+        <field name="SEMANA" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Semana]]></description>
+        </field>
+        <field name="NUMPEDIDOSEMANA" systemField="N" dataType="S" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Nr.Pedido]]></description>
+        </field>
+        <field name="OBSERVACAO" systemField="N" dataType="S" presentationType="T" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Obs]]></description>
+        </field>
+        <field name="DTCRIACAO" systemField="N" dataType="H" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Data da Criação]]></description>
+          <expression><![CDATA[$ctx_dh_atual]]></expression>
+          <properties>
+            <prop name="nullable"><![CDATA[S]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[S]]></prop>
+            <prop name="requerido"><![CDATA[N]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+        <field name="CODUSUARIOCRIACAO" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S" size="5">
+          <description><![CDATA[Cód. Usuário]]></description>
+          <expression><![CDATA[$ctx_usuario_logado]]></expression>
+          <properties>
+            <prop name="nullable"><![CDATA[S]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[S]]></prop>
+            <prop name="requerido"><![CDATA[N]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+        <field name="MERCADO" systemField="N" dataType="S" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Mercado]]></description>
+        </field>
+      </fields>
+      <relationShip>
+        <relation entityName="Parceiro" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="S" tableName="TGFPAR" />
+          <fields>
+            <field localName="CODPARC" targetName="CODPARC" />
+          </fields>
+        </relation>
+        <relation entityName="Usuario" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="S" tableName="TSIUSU" />
+          <fields>
+            <field localName="CODUSUARIOCRIACAO" targetName="CODUSU" />
+          </fields>
+        </relation>
+        <relation entityName="CabecalhoNota" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="S" tableName="TGFCAB" />
+          <fields>
+            <field localName="NUNOTA" targetName="NUNOTA" />
+          </fields>
+        </relation>
+        <relation entityName="AD_ORDEMPRODUCAOITEM" type="I" insert="N" update="N" remove="S">
+          <targetInfo systemInstance="N" tableName="AD_ORDEMPRODUCAOITEM" />
+          <fields>
+            <field localName="CODOP" targetName="CODOP" />
+          </fields>
+        </relation>
+      </relationShip>
+    </instance>
+    <instance name="AD_CALIBREPRODUTO" isUpdate="false">
+      <instanceDescription><![CDATA[Calibre / Qualidade]]></instanceDescription>
+      <tableInfo name="AD_CALIBREPRODUTO" sequenceType="M" presentationField="DESCRICAO">
+        <category><![CDATA[Cadastro de Produtos]]></category>
+        <telaDescription><![CDATA[PH - Cadastro de Calibres/Qualidade]]></telaDescription>
+        <tableDescription><![CDATA[Calibre / Qualidade]]></tableDescription>
+        <primaryKey>
+          <CODPROD />
+          <CALIBRE />
+        </primaryKey>
+      </tableInfo>
+      <fields>
+        <field name="ATIVO" systemField="N" dataType="S" presentationType="O" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[ATIVO]]></description>
+          <options>
+            <option value="S"><![CDATA[Sim]]></option>
+            <option value="N" default="S"><![CDATA[Não]]></option>
+          </options>
+        </field>
+        <field name="DESCRICAO" systemField="N" dataType="S" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="S">
+          <description><![CDATA[Descrição]]></description>
+          <properties>
+            <prop name="nullable"><![CDATA[S]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[N]]></prop>
+            <prop name="requerido"><![CDATA[N]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+        <field name="CALIBRE" systemField="N" dataType="S" presentationType="O" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="N">
+          <description><![CDATA[Classificação]]></description>
+          <options>
+            <option value="01"><![CDATA[01]]></option>
+            <option value="02"><![CDATA[02]]></option>
+            <option value="03"><![CDATA[03]]></option>
+            <option value="04"><![CDATA[04]]></option>
+            <option value="05"><![CDATA[05]]></option>
+            <option value="06"><![CDATA[06]]></option>
+            <option value="07"><![CDATA[07]]></option>
+            <option value="08"><![CDATA[08]]></option>
+            <option value="09"><![CDATA[09]]></option>
+            <option value="10"><![CDATA[10]]></option>
+            <option value="11"><![CDATA[11]]></option>
+            <option value="12"><![CDATA[12]]></option>
+            <option value="13"><![CDATA[13]]></option>
+            <option value="14"><![CDATA[14]]></option>
+            <option value="15"><![CDATA[15]]></option>
+            <option value="16"><![CDATA[16]]></option>
+            <option value="17"><![CDATA[17]]></option>
+            <option value="18"><![CDATA[18]]></option>
+            <option value="19"><![CDATA[19]]></option>
+            <option value="20"><![CDATA[20]]></option>
+            <option value="21"><![CDATA[21]]></option>
+            <option value="22"><![CDATA[22]]></option>
+            <option value="23"><![CDATA[23]]></option>
+            <option value="24"><![CDATA[24]]></option>
+            <option value="25"><![CDATA[25]]></option>
+            <option value="26"><![CDATA[26]]></option>
+            <option value="27"><![CDATA[27]]></option>
+            <option value="28"><![CDATA[28]]></option>
+            <option value="29"><![CDATA[29]]></option>
+            <option value="30"><![CDATA[30]]></option>
+            <option value="31"><![CDATA[31]]></option>
+            <option value="32"><![CDATA[32]]></option>
+            <option value="33"><![CDATA[33]]></option>
+            <option value="34"><![CDATA[34]]></option>
+            <option value="35"><![CDATA[35]]></option>
+            <option value="36"><![CDATA[36]]></option>
+            <option value="37"><![CDATA[37]]></option>
+            <option value="38"><![CDATA[38]]></option>
+            <option value="39"><![CDATA[39]]></option>
+            <option value="40"><![CDATA[40]]></option>
+            <option value="42"><![CDATA[42]]></option>
+            <option value="48"><![CDATA[48]]></option>
+            <option value="54"><![CDATA[54]]></option>
+            <option value="56"><![CDATA[56]]></option>
+            <option value="60"><![CDATA[60]]></option>
+            <option value="63"><![CDATA[63]]></option>
+            <option value="64"><![CDATA[64]]></option>
+            <option value="66"><![CDATA[66]]></option>
+            <option value="72"><![CDATA[72]]></option>
+            <option value="78"><![CDATA[78]]></option>
+            <option value="80"><![CDATA[80]]></option>
+            <option value="84"><![CDATA[84]]></option>
+            <option value="88"><![CDATA[88]]></option>
+            <option value="EX"><![CDATA[EXTRA]]></option>
+            <option value="L"><![CDATA[L]]></option>
+            <option value="A"><![CDATA[A]]></option>
+            <option value="U"><![CDATA[U]]></option>
+            <option value="90"><![CDATA[90]]></option>
+            <option value="A0"><![CDATA[08-09]]></option>
+            <option value="A1"><![CDATA[08a14]]></option>
+            <option value="A2"><![CDATA[08a15]]></option>
+            <option value="A3"><![CDATA[10-11]]></option>
+            <option value="A4"><![CDATA[100]]></option>
+            <option value="A5"><![CDATA[110]]></option>
+            <option value="A6"><![CDATA[113]]></option>
+            <option value="A7"><![CDATA[12-13-14]]></option>
+            <option value="A8"><![CDATA[120]]></option>
+            <option value="A9"><![CDATA[125]]></option>
+            <option value="B0"><![CDATA[12a14]]></option>
+            <option value="B1"><![CDATA[138]]></option>
+            <option value="B2"><![CDATA[14-15-16]]></option>
+            <option value="B3"><![CDATA[15-16]]></option>
+            <option value="B4"><![CDATA[150]]></option>
+            <option value="B5"><![CDATA[175]]></option>
+            <option value="B6"><![CDATA[200]]></option>
+            <option value="B7"><![CDATA[230]]></option>
+            <option value="B8"><![CDATA[250]]></option>
+            <option value="B9"><![CDATA[280]]></option>
+            <option value="C0"><![CDATA[EX A]]></option>
+            <option value="C1"><![CDATA[EX L]]></option>
+            <option value="RE"><![CDATA[REFUGO]]></option>
+            <option value="MI"><![CDATA[MI]]></option>
+            <option value="ME"><![CDATA[ME]]></option>
+            <option value="DE"><![CDATA[DESIDRATADO]]></option>
+            <option value="58"><![CDATA[58]]></option>
+            <option value="C2"><![CDATA[EXTRA A A]]></option>
+            <option value="C3"><![CDATA[Extrinha]]></option>
+            <option value="SL"><![CDATA[SL]]></option>
+            <option value="50"><![CDATA[50]]></option>
+            <option value="A10"><![CDATA[12a18]]></option>
+            <option value="A11"><![CDATA[20a26]]></option>
+            <option value="A12"><![CDATA[28a32]]></option>
+            <option value="91"><![CDATA[12a18]]></option>
+            <option value="92"><![CDATA[20a26]]></option>
+            <option value="93"><![CDATA[28a36]]></option>
+            <option value="12 a 18"><![CDATA[12 a 18]]></option>
+            <option value="20 a 26"><![CDATA[20 a 26]]></option>
+            <option value="28 a 32" default="S"><![CDATA[28 a 32]]></option>
+          </options>
+        </field>
+        <field name="CODPROD" systemField="N" dataType="I" presentationType="P" calculated="N" allowSearch="S" allowDefault="S" visibleOnSearch="S" allowNull="N" size="10">
+          <description><![CDATA[Cód. Produto]]></description>
+          <properties>
+            <prop name="nullable"><![CDATA[N]]></prop>
+            <prop name="visivel"><![CDATA[S]]></prop>
+            <prop name="readOnly"><![CDATA[N]]></prop>
+            <prop name="requerido"><![CDATA[S]]></prop>
+            <prop name="combobox"><![CDATA[N]]></prop>
+          </properties>
+        </field>
+      </fields>
+      <relationShip>
+        <relation entityName="Produto" type="I" insert="N" update="N" remove="N">
+          <targetInfo systemInstance="S" tableName="TGFPRO" />
+          <fields>
+            <field localName="CODPROD" targetName="CODPROD" />
+          </fields>
+        </relation>
+      </relationShip>
+      <references>
+        <reference entityName="Produto" tableName="TGFPRO" type="I" insert="N" update="N" remove="S">
+          <!--Esse elemento "reference" diz respeito a campos da entidade exportada que são mencionados em tabelas do sistema.-->
+          <fields>
+            <field name="CODPROD" systemField="S" localName="CODPROD" />
+          </fields>
+        </reference>
+        <reference entityName="ItemNota" tableName="TGFITE" type="I" insert="N" update="N" remove="N">
+          <!--Esse elemento "reference" diz respeito a campos da entidade exportada que são mencionados em tabelas do sistema.-->
+          <fields>
+            <field name="AD_CALIBRE" systemField="N" dataType="S" presentationType="P" calculated="N" allowSearch="N" allowDefault="S" visibleOnSearch="S" allowNull="S" localName="CALIBRE">
+              <description><![CDATA[[Calibre]]]></description>
+            </field>
+            <field name="CODPROD" systemField="S" localName="CODPROD" />
+          </fields>
+        </reference>
+      </references>
+    </instance>
+  </instances>
+</metadata>
+

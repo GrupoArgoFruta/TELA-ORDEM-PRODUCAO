@@ -6,6 +6,7 @@ import '@sankhyalabs/sankhya-docusaurus-styles/dist/index.css';
 import '@sankhyalabs/ez-design/dist/default/ez-themed.min.css';
 
 import OrdensProducao, { RESOURCE_ID } from './OrdensProducao';
+import { observarRodapeItensOrdem } from './RodapeItens';
 
 /*
  * Tira a tela da moldura de gadget e reabre em tela cheia. Roda no escopo do modulo, antes
@@ -25,9 +26,16 @@ const substituindo = window.BI?.removerFrame ({
     resourceID: RESOURCE_ID
 });
 
-const montar = () =>
+const montar = () => {
     createRoot (document.getElementById ('root') as HTMLElement)
         .render (<React.StrictMode><OrdensProducao /></React.StrictMode>);
+
+    /* So faz sentido observar o DOM deste documento quando e ELE que vai ficar de pe — mesmo
+       raciocinio do `if (substituindo)` abaixo: no caminho condenado (dentro da moldura do
+       gadget, antes do removerFrame trocar o innerHTML), nao ha porque montar um observer que
+       nunca vai ver nada relevante. */
+    observarRodapeItensOrdem ();
+};
 
 /*
  * ABRIR A TELA MONTA O REACT UMA VEZ SO.
