@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { SnkApplication, SnkDataUnit, SnkCrud } from "@sankhyalabs/sankhyablocks/react/components";
 import Cabecalho from './Cabecalho';
+import { gerenciadorBarraTarefas, aoClicarNaBarra } from './BarraTarefas';
 
 /*
  * SPIKE — versao minima so pra validar se `entityName` resolve contra o BFF.
@@ -16,25 +17,45 @@ import Cabecalho from './Cabecalho';
  * e o sinal mais barato de que `entityName` resolveu. Ver a secao "Plano de validacao" da
  * spec (docs/superpowers/specs/2026-08-19-ordem-producao-bi-dashboard-design.md).
  *
- * Depois que isso for confirmado, os proximos passos (nesta ordem) sao:
- *   1. Descobrir/registrar o RESOURCE_ID certo (ver comentario original em Dados.tsx, que
- *      ficou como referencia no historico do git) e tirar o modo somente-leitura.
- *   2. Confirmar se a guia de itens (AD_ORDEMPRODUCAOITEM) aparece sozinha dentro do SnkCrud.
- *   3. Reintroduzir BarraTarefas.tsx (botao "Avancar status") e Rodape.tsx (totais).
+ * BarraTarefas.tsx ja esta plugada (botao "Gerar Relatório", ver src/BarraTarefas.tsx).
+ * Ainda faltam: descobrir/registrar o RESOURCE_ID certo pra tirar o modo somente-leitura,
+ * confirmar se a guia de itens (AD_ORDEMPRODUCAOITEM) aparece sozinha dentro do SnkCrud, e
+ * Rodape.tsx (totais).
  */
 export const RESOURCE_ID: string | undefined = undefined;
 const entidade = "AD_ORDEMPRODUCAO";
 
 const OrdensProducao = () => {
+
+    /*
+     * SnkDataUnit so instancia o DataUnit no mount (componentDidLoad -> loadDataUnit()); ele
+     * nunca chama dataUnit.loadData() sozinho. Sem isso a grade abre vazia e so carrega quando
+     * o usuario clica em "Atualizar" na barra de tarefas (ou aperta F5) — os unicos gatilhos de
+     * loadData() no pacote @sankhyalabs/sankhyablocks. getDataUnit() enfileira a resolucao,
+     * entao funciona mesmo chamado antes do componentDidLoad do snk-data-unit terminar.
+     */
+    const dataUnitRef = useRef<HTMLSnkDataUnitElement>(null);
+
+    useEffect(() => {
+        dataUnitRef.current
+            ?.getDataUnit ()
+            .then (dataUnit => dataUnit.loadData ());
+    }, []);
+
     return (
         <>
             <Cabecalho />
             <SnkApplication configName={entidade}>
                 <SnkDataUnit
+                    ref = {dataUnitRef}
                     entityName = {entidade}
                     resourceID = {RESOURCE_ID || undefined}
                 >
-                    <SnkCrud configName={entidade} />
+                    <SnkCrud
+                        configName={entidade}
+                        taskbarManager={gerenciadorBarraTarefas}
+                        onActionClick={aoClicarNaBarra}
+                    />
                 </SnkDataUnit>
             </SnkApplication>
         </>

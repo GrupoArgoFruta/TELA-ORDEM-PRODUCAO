@@ -53,12 +53,29 @@ export interface GerenciadorBarraTarefas {
  * icone), o caminho passa a ser o iconButton, que usa o `hint` como title normalmente — e ai
  * o hint volta a ser a descricao longa.
  */
-export const BOTAO_ALERTA: BotaoCustomizado = {
-    name: 'BOTAO_ALERTA',
-    hint: 'Alerta',                        /* vira o label — texto visivel no botao */
-    text: 'Dispara um alerta de teste',    /* vira o title — tooltip                */
-    iconName: 'acao'
+export const BOTAO_RELATORIO: BotaoCustomizado = {
+    name: 'BOTAO_RELATORIO',
+    hint: 'Gerar Relatório',                                  /* vira o label — texto visivel no botao */
+    text: 'Imprime a Ordem de Produção selecionada (PDF)',    /* vira o title — tooltip                */
+    iconName: 'print'
 };
+
+/*
+ * Codigo do relatorio "ORDEM DE PRODUCAO" cadastrado em Relatorios Formatados (tela nativa
+ * do Sankhya, nao neste projeto). Especifico deste banco/ambiente — se o relatorio for
+ * reimportado ou o ambiente mudar (homologacao/producao), o Codigo pode vir diferente;
+ * conferir em Relatorios Formatados antes de assumir que 295 continua certo.
+ */
+const CODIGO_RELATORIO_OP = 295;
+
+/*
+ * O TaskbarManager.getButtons recebe o dataState (com `selectedRecord`) a cada mudanca de
+ * selecao/estado da grade — e a unica via documentada pra saber qual registro esta
+ * selecionado a partir daqui. O evento actionClick, disparado no clique do botao, so traz o
+ * nome do botao (CustomEvent<string>), sem o registro — por isso guardamos o ultimo aqui pra
+ * o clique conseguir ler.
+ */
+let ultimoRegistroSelecionado: Record<string, any> | undefined;
 
 /*
  * O snk-grid monta varias barras e chama getButtons uma vez para cada, variando o id
@@ -75,25 +92,79 @@ const BARRA_ALVO = 'snkGridHeaderTaskbar';
 
 export const gerenciadorBarraTarefas: GerenciadorBarraTarefas = {
 
-    getButtons (taskbarId, _dataState, currentButtons) {
+    getButtons (taskbarId, dataState, currentButtons) {
+
+        /* Cache defensivo: so atualiza se o formato bater com o DataState real
+           (ver comentario acima de `ultimoRegistroSelecionado`). Cast em vez de importar o
+           tipo DataState de sankhyablocks — mesmo motivo do `dataState: unknown` na
+           interface: aquelas typings tem erros de resolucao. */
+        const estado = dataState as { selectedRecord?: Record<string, any> } | undefined;
+        if (estado?.selectedRecord) ultimoRegistroSelecionado = estado.selectedRecord;
 
         if (!taskbarId.startsWith (BARRA_ALVO)) return currentButtons;
 
-        return [...currentButtons, BOTAO_ALERTA];
+        return [...currentButtons, BOTAO_RELATORIO];
 
     }
 
 };
 
 /*
+ * Monta a URL de hash que o Sankhya usa pra abrir o "Report Launcher" de um relatorio
+ * formatado — o mesmo mecanismo do botao nativo "Visualizar Relatorio" (confirmado
+ * decodificando a URL real gerada por ele: dois segmentos em base64 separados por "/",
+ * `app/<base64 do nome da classe>/<base64 do JSON de parametros>`).
+ *
+ * Primeiro segmento decodificado: "br.com.sankhya.controls.ReportLauncher_295".
+ * Segundo segmento decodificado: {"PK_CODOP":{"type":"I","value":"1"},"pks":{"0":{"fields":
+ * {"0":{"nome":"PK_CODOP","tipo":"I","valor":1}}}}} — "PK_CODOP" e o nome do parametro
+ * declarado no OrdemProducao.jrxml (ver relatorios/OrdemProducao.jrxml).
+ */
+function montarHashRelatorio (codop: number | string): string {
+
+    const nomeClasseLancador = `br.com.sankhya.controls.ReportLauncher_${CODIGO_RELATORIO_OP}`;
+
+    const parametros = {
+        PK_CODOP: { type: 'I', value: String (codop) },
+        pks: {
+            '0': {
+                fields: {
+                    '0': { nome: 'PK_CODOP', tipo: 'I', valor: Number (codop) }
+                }
+            }
+        }
+    };
+
+    return `app/${btoa (nomeClasseLancador)}/${btoa (JSON.stringify (parametros))}`
+        + `&pk-refresh=${Date.now ()}`;
+
+}
+
+/*
+ * A tela roda dentro do iframe que o `removerFrame` monta (ver src/index.tsx) — o shell do
+ * Sankhya (com a barra de abas onde o relatorio abre) fica em `window.top`, nao em
+ * `window.self`. Mudar o hash la e o que o botao nativo faz.
+ */
+function abrirRelatorioOrdemProducao (codop: number | string): void {
+    (window.top ?? window).location.hash = montarHashRelatorio (codop);
+}
+
+/*
  * O evento actionClick do SnkCrud dispara para QUALQUER botao ou acao da barra — os padrao
- * inclusive. O detail traz o nome, entao filtrar pelo nosso e obrigatorio, senao o alerta
- * apareceria ao clicar em atualizar, exportar, inserir e afins.
+ * inclusive. O detail traz o nome, entao filtrar pelo nosso e obrigatorio, senao o relatorio
+ * abriria ao clicar em atualizar, exportar, inserir e afins.
  */
 export function aoClicarNaBarra (evento: CustomEvent<string>) {
 
-    if (evento.detail !== BOTAO_ALERTA.name) return;
+    if (evento.detail !== BOTAO_RELATORIO.name) return;
 
-    window.alert ('Botão customizado da barra de tarefas foi clicado.');
+    const codop = ultimoRegistroSelecionado?.['CODOP'];
+
+    if (codop == null) {
+        window.alert ('Selecione uma Ordem de Produção antes de gerar o relatório.');
+        return;
+    }
+
+    abrirRelatorioOrdemProducao (codop);
 
 }

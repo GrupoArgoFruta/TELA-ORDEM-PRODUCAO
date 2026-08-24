@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="OrdemProducao" language="groovy" pageWidth="1000" pageHeight="595" orientation="Landscape" columnWidth="960" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
+	<property name="ireport.zoom" value="5.0"/>
+	<property name="ireport.x" value="3035"/>
+	<property name="ireport.y" value="719"/>
+	<parameter name="PK_CODOP" class="java.math.BigDecimal" isForPrompting="false">
+		<parameterDescription><![CDATA[Codigo da OP (AD_ORDEMPRODUCAO.CODOP) selecionada na tela]]></parameterDescription>
+	</parameter>
+	<queryString>
+		<![CDATA[SELECT
+    OP.NUMOP,
+    OP.MERCADO,
+    OP.OBSERVACAO,
+    OP.SEMANA,
+    OP.NUMPEDIDOSEMANA,
+    OP.NUNOTA,
+    PAR.NOMEPARC          AS CLIENTE,
+    ITE.CODITEM,
+    ITE.QTDPALLETS,
+    ITE.QTDCAIXAS,
+    ITE.DTEMBALAGEM,
+    PRO.DESCRPROD          AS PRODUTO,
+    GRU.AD_DESCRESUMO      AS VARIEDADE,
+    ITE.CALIBRE,
+    ITE.PADRAO,
+    CUMB.DESCRPROD          AS CUMBUCA,
+    CETQ.DESCRPROD          AS CINTAETIQUETA,
+    ITE.ETIQUETA,
+    PARPROD.NOMEPARC       AS PRODUTOR,
+    AREA.DESCVALVULA       AS VALVULA
+FROM AD_ORDEMPRODUCAO OP
+INNER JOIN AD_ORDEMPRODUCAOITEM ITE ON ITE.CODOP = OP.CODOP
+LEFT JOIN TGFPAR PAR     ON PAR.CODPARC = OP.CODPARC
+LEFT JOIN TGFPRO PRO     ON PRO.CODPROD = ITE.CODPROD
+LEFT JOIN TGFGRU GRU     ON GRU.CODGRUPOPROD = PRO.CODGRUPOPROD
+LEFT JOIN TGFPRO CUMB    ON CUMB.CODPROD = ITE.CODCUMBUCA
+LEFT JOIN TGFPRO CETQ    ON CETQ.CODPROD = ITE.CODPRODAD
+LEFT JOIN TGFPAR PARPROD ON PARPROD.CODPARC = ITE.CODPARC
+LEFT JOIN AD_AREAPARC AREA ON AREA.CODPARC = ITE.CODPARC AND AREA.CODAREA = ITE.CODAREA
+WHERE OP.CODOP = $P{PK_CODOP}
+ORDER BY ITE.CODITEM]]>
+	</queryString>
+	<field name="NUMOP" class="java.lang.String"/>
+	<field name="MERCADO" class="java.lang.String"/>
+	<field name="OBSERVACAO" class="java.lang.String"/>
+	<field name="SEMANA" class="java.math.BigDecimal"/>
+	<field name="NUMPEDIDOSEMANA" class="java.lang.String"/>
+	<field name="NUNOTA" class="java.math.BigDecimal"/>
+	<field name="CLIENTE" class="java.lang.String"/>
+	<field name="CODITEM" class="java.math.BigDecimal"/>
+	<field name="QTDPALLETS" class="java.math.BigDecimal"/>
+	<field name="QTDCAIXAS" class="java.math.BigDecimal"/>
+	<field name="DTEMBALAGEM" class="java.util.Date"/>
+	<field name="PRODUTO" class="java.lang.String"/>
+	<field name="VARIEDADE" class="java.lang.String"/>
+	<field name="CALIBRE" class="java.lang.String"/>
+	<field name="PADRAO" class="java.math.BigDecimal"/>
+	<field name="CUMBUCA" class="java.lang.String"/>
+	<field name="CINTAETIQUETA" class="java.lang.String"/>
+	<field name="ETIQUETA" class="java.lang.String"/>
+	<field name="PRODUTOR" class="java.lang.String"/>
+	<field name="VALVULA" class="java.lang.String"/>
+	<variable name="totalPallets" class="java.math.BigDecimal" resetType="Column" calculation="Sum">
+		<variableExpression><![CDATA[$F{QTDPALLETS}]]></variableExpression>
+	</variable>
+	<variable name="totalCaixas" class="java.math.BigDecimal" resetType="Column" calculation="Sum">
+		<variableExpression><![CDATA[$F{QTDCAIXAS}]]></variableExpression>
+	</variable>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="159" splitType="Stretch">
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="0" width="960" height="70" backcolor="#FFFFFF"/>
+				<graphicElement>
+					<pen lineWidth="0.75" lineColor="#000000"/>
+				</graphicElement>
+			</rectangle>
+			<image scaleImage="RetainShape" hAlign="Left" vAlign="Middle">
+				<reportElement x="6" y="5" width="95" height="60"/>
+				<imageExpression class="java.lang.String"><![CDATA["/home/mgeweb/repositorio/impressao/Logo.png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="105" y="10" width="555" height="30"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="20" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ORDEM DE PRODUÇÃO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="105" y="40" width="555" height="14"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="8" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ARGOFRUTA COMERCIAL EXPORTADORA LDTA.]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="665" y="12" width="150" height="26"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font fontName="Arial" size="13" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA["N°: " + $F{NUMOP}]]></textFieldExpression>
+			</textField>
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="72" width="960" height="16" backcolor="#0B5C39"/>
+				<graphicElement>
+					<pen lineWidth="0.0"/>
+				</graphicElement>
+			</rectangle>
+			<textField isBlankWhenNull="true">
+				<reportElement x="6" y="72" width="954" height="16" forecolor="#FFFFFF"/>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="Arial" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{SEMANA} == null ? "" : ("SEMANA " + $F{SEMANA}.intValue() + ",  PEDIDO " + ($F{NUMPEDIDOSEMANA} == null ? "" : $F{NUMPEDIDOSEMANA}))]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="6" y="92" width="70" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<text><![CDATA[CLIENTE:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="76" y="92" width="460" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{CLIENTE}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="6" y="108" width="70" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<text><![CDATA[MERCADO:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="76" y="108" width="460" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{MERCADO}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="6" y="124" width="110" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<text><![CDATA[PEDIDO VINCULADO:]]></text>
+			</staticText>
+			<textField isBlankWhenNull="true">
+				<reportElement x="118" y="124" width="300" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{NUNOTA} == null ? "" : $F{NUNOTA}.toBigInteger().toString()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement mode="Opaque" x="0" y="142" width="25" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ITEM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="25" y="142" width="76" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[VARIEDADE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="101" y="142" width="173" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PRODUTO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="274" y="142" width="71" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CALIBRE/CLASSE]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="345" y="142" width="50" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[QTD PALLETS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="395" y="142" width="40" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PADRÃO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="435" y="142" width="56" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[QTD. CAIXAS]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="491" y="142" width="89" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CUMBUCA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="580" y="142" width="91" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[CINTA/ETIQUETA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="671" y="142" width="53" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[ETIQUETA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="724" y="142" width="96" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[DATA DE EMBALAGEM]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="820" y="142" width="90" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PRODUTOR]]></text>
+			</staticText>
+			<staticText>
+				<reportElement mode="Opaque" x="910" y="142" width="50" height="17" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<text><![CDATA[VALVULA]]></text>
+			</staticText>
+		</band>
+	</title>
+	<detail>
+		<band height="17" splitType="Stretch">
+			<textField isBlankWhenNull="true">
+				<reportElement x="0" y="0" width="25" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{CODITEM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="25" y="0" width="76" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{VARIEDADE}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="101" y="0" width="173" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{PRODUTO}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="274" y="0" width="71" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA["CL " + ($F{CALIBRE} == null ? "" : $F{CALIBRE})]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="435" y="0" width="56" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{QTDCAIXAS}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="491" y="0" width="89" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{CUMBUCA}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement mode="Transparent" x="580" y="0" width="91" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{CINTAETIQUETA}]]></textFieldExpression>
+			</textField>
+			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement x="724" y="0" width="96" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.util.Date"><![CDATA[$F{DTEMBALAGEM}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="820" y="0" width="90" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{PRODUTOR}]]></textFieldExpression>
+			</textField>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="910" y="0" width="50" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{VALVULA}]]></textFieldExpression>
+			</textField>
+			<textField isBlankWhenNull="true">
+				<reportElement x="671" y="0" width="53" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA["S".equals($F{ETIQUETA}) ? "SIM" : "NÃO"]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="395" y="0" width="40" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{PADRAO}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0" isBlankWhenNull="true">
+				<reportElement x="345" y="0" width="50" height="17"/>
+				<box>
+					<pen lineWidth="0.25" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{QTDPALLETS}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="70" splitType="Stretch">
+			<textField pattern="#,##0" isBlankWhenNull="true">
+				<reportElement mode="Opaque" x="345" y="0" width="50" height="22" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{totalPallets}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0" isBlankWhenNull="true">
+				<reportElement mode="Opaque" x="435" y="0" width="56" height="22" backcolor="#FFFFFF"/>
+				<box>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</box>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font fontName="Arial" size="7" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$V{totalCaixas}]]></textFieldExpression>
+			</textField>
+			<rectangle>
+				<reportElement mode="Opaque" x="0" y="22" width="820" height="46" backcolor="#FFFFFF"/>
+				<graphicElement>
+					<pen lineWidth="0.5" lineColor="#000000"/>
+				</graphicElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="6" y="26" width="35" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<text><![CDATA[OBS:]]></text>
+			</staticText>
+			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
+				<reportElement x="42" y="26" width="772" height="38"/>
+				<textElement verticalAlignment="Top">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{OBSERVACAO}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnFooter>
+</jasperReport>
