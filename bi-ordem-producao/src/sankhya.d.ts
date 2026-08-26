@@ -58,3 +58,14 @@ interface Window {
     resourceID?: string;
 
 }
+
+/*
+ * O pacote so publica os tipos de ConfigStorage em dist/types/lib/configs/ConfigStorage.d.ts,
+ * mas o modulo em si so existe em dist/collection/lib/configs/ConfigStorage.js (dist/index.js,
+ * o entry point "oficial" do pacote, nao reexporta ConfigStorage). O TypeScript nao acha
+ * declaracao pro caminho profundo sozinho — aqui so aponta pro .d.ts certo; em runtime quem
+ * resolve o arquivo de verdade e o bundler (webpack via CRA), nao isto aqui.
+ */
+declare module '@sankhyalabs/sankhyablocks/dist/collection/lib/configs/ConfigStorage' {
+    export * from '@sankhyalabs/sankhyablocks/dist/types/lib/configs/ConfigStorage';
+}

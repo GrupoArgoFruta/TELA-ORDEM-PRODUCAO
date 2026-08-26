@@ -1,26 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="OrdemProducao" language="groovy" pageWidth="1000" pageHeight="595" orientation="Landscape" columnWidth="960" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20">
-	<property name="ireport.zoom" value="5.0"/>
-	<property name="ireport.x" value="3035"/>
-	<property name="ireport.y" value="719"/>
+	<property name="ireport.zoom" value="2.0"/>
+	<property name="ireport.x" value="0"/>
+	<property name="ireport.y" value="0"/>
 	<parameter name="PK_CODOP" class="java.math.BigDecimal" isForPrompting="false">
 		<parameterDescription><![CDATA[Codigo da OP (AD_ORDEMPRODUCAO.CODOP) selecionada na tela]]></parameterDescription>
 	</parameter>
 	<queryString>
 		<![CDATA[SELECT
-    OP.NUMOP,
+    OP.CODOP,
     OP.MERCADO,
     OP.OBSERVACAO,
     OP.SEMANA,
     OP.NUMPEDIDOSEMANA,
     OP.NUNOTA,
+    OP.DATACARREGAMENTO,
     PAR.NOMEPARC          AS CLIENTE,
     ITE.CODITEM,
     ITE.QTDPALLETS,
-    ITE.QTDCAIXAS,
     ITE.DTEMBALAGEM,
     PRO.DESCRPROD          AS PRODUTO,
-    GRU.AD_DESCRESUMO      AS VARIEDADE,
+    MP.DESCRPROD           AS VARIEDADE,
     ITE.CALIBRE,
     ITE.PADRAO,
     CUMB.DESCRPROD          AS CUMBUCA,
@@ -32,7 +32,7 @@ FROM AD_ORDEMPRODUCAO OP
 INNER JOIN AD_ORDEMPRODUCAOITEM ITE ON ITE.CODOP = OP.CODOP
 LEFT JOIN TGFPAR PAR     ON PAR.CODPARC = OP.CODPARC
 LEFT JOIN TGFPRO PRO     ON PRO.CODPROD = ITE.CODPROD
-LEFT JOIN TGFGRU GRU     ON GRU.CODGRUPOPROD = PRO.CODGRUPOPROD
+LEFT JOIN TGFPRO MP      ON MP.CODPROD = ITE.CODPRODMP
 LEFT JOIN TGFPRO CUMB    ON CUMB.CODPROD = ITE.CODCUMBUCA
 LEFT JOIN TGFPRO CETQ    ON CETQ.CODPROD = ITE.CODPRODAD
 LEFT JOIN TGFPAR PARPROD ON PARPROD.CODPARC = ITE.CODPARC
@@ -40,16 +40,16 @@ LEFT JOIN AD_AREAPARC AREA ON AREA.CODPARC = ITE.CODPARC AND AREA.CODAREA = ITE.
 WHERE OP.CODOP = $P{PK_CODOP}
 ORDER BY ITE.CODITEM]]>
 	</queryString>
-	<field name="NUMOP" class="java.lang.String"/>
+	<field name="CODOP" class="java.math.BigDecimal"/>
 	<field name="MERCADO" class="java.lang.String"/>
 	<field name="OBSERVACAO" class="java.lang.String"/>
-	<field name="SEMANA" class="java.math.BigDecimal"/>
+	<field name="SEMANA" class="java.lang.String"/>
 	<field name="NUMPEDIDOSEMANA" class="java.lang.String"/>
 	<field name="NUNOTA" class="java.math.BigDecimal"/>
+	<field name="DATACARREGAMENTO" class="java.util.Date"/>
 	<field name="CLIENTE" class="java.lang.String"/>
 	<field name="CODITEM" class="java.math.BigDecimal"/>
 	<field name="QTDPALLETS" class="java.math.BigDecimal"/>
-	<field name="QTDCAIXAS" class="java.math.BigDecimal"/>
 	<field name="DTEMBALAGEM" class="java.util.Date"/>
 	<field name="PRODUTO" class="java.lang.String"/>
 	<field name="VARIEDADE" class="java.lang.String"/>
@@ -64,7 +64,7 @@ ORDER BY ITE.CODITEM]]>
 		<variableExpression><![CDATA[$F{QTDPALLETS}]]></variableExpression>
 	</variable>
 	<variable name="totalCaixas" class="java.math.BigDecimal" resetType="Column" calculation="Sum">
-		<variableExpression><![CDATA[$F{QTDCAIXAS}]]></variableExpression>
+		<variableExpression><![CDATA[($F{QTDPALLETS} == null ? java.math.BigDecimal.ZERO : $F{QTDPALLETS}).multiply($F{PADRAO} == null ? java.math.BigDecimal.ZERO : $F{PADRAO})]]></variableExpression>
 	</variable>
 	<background>
 		<band splitType="Stretch"/>
@@ -100,7 +100,7 @@ ORDER BY ITE.CODITEM]]>
 				<textElement textAlignment="Right" verticalAlignment="Middle">
 					<font fontName="Arial" size="13" isBold="true"/>
 				</textElement>
-				<textFieldExpression class="java.lang.String"><![CDATA["N°: " + $F{NUMOP}]]></textFieldExpression>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{CODOP} == null ? "N°: " : ("N°: " + $F{CODOP}.toBigInteger().toString())]]></textFieldExpression>
 			</textField>
 			<rectangle>
 				<reportElement mode="Opaque" x="0" y="72" width="960" height="16" backcolor="#0B5C39"/>
@@ -113,7 +113,7 @@ ORDER BY ITE.CODITEM]]>
 				<textElement textAlignment="Left" verticalAlignment="Middle">
 					<font fontName="Arial" size="8" isBold="true"/>
 				</textElement>
-				<textFieldExpression class="java.lang.String"><![CDATA[$F{SEMANA} == null ? "" : ("SEMANA " + $F{SEMANA}.intValue() + ",  PEDIDO " + ($F{NUMPEDIDOSEMANA} == null ? "" : $F{NUMPEDIDOSEMANA}))]]></textFieldExpression>
+				<textFieldExpression class="java.lang.String"><![CDATA[$F{SEMANA} == null ? "" : ("SEMANA " + $F{SEMANA} + ",  PEDIDO " + ($F{NUMPEDIDOSEMANA} == null ? "" : $F{NUMPEDIDOSEMANA}))]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="6" y="92" width="70" height="14"/>
@@ -156,6 +156,20 @@ ORDER BY ITE.CODITEM]]>
 					<font fontName="Arial" size="8" isBold="true"/>
 				</textElement>
 				<textFieldExpression class="java.lang.String"><![CDATA[$F{NUNOTA} == null ? "" : $F{NUNOTA}.toBigInteger().toString()]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="440" y="124" width="110" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8"/>
+				</textElement>
+				<text><![CDATA[DATA CARREGAMENTO:]]></text>
+			</staticText>
+			<textField pattern="dd/MM/yyyy" isBlankWhenNull="true">
+				<reportElement x="552" y="124" width="90" height="14"/>
+				<textElement verticalAlignment="Middle">
+					<font fontName="Arial" size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression class="java.util.Date"><![CDATA[$F{DATACARREGAMENTO}]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement mode="Opaque" x="0" y="142" width="25" height="17" backcolor="#FFFFFF"/>
@@ -339,7 +353,7 @@ ORDER BY ITE.CODITEM]]>
 				<textElement textAlignment="Center" verticalAlignment="Middle">
 					<font fontName="Arial" size="7"/>
 				</textElement>
-				<textFieldExpression class="java.math.BigDecimal"><![CDATA[$F{QTDCAIXAS}]]></textFieldExpression>
+				<textFieldExpression class="java.math.BigDecimal"><![CDATA[($F{QTDPALLETS} == null ? java.math.BigDecimal.ZERO : $F{QTDPALLETS}).multiply($F{PADRAO} == null ? java.math.BigDecimal.ZERO : $F{PADRAO})]]></textFieldExpression>
 			</textField>
 			<textField isStretchWithOverflow="true" isBlankWhenNull="true">
 				<reportElement x="491" y="0" width="89" height="17"/>
